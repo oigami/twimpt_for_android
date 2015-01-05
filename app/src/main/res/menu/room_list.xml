@@ -1,0 +1,16 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Options -->
+
+    <item
+        android:id="@+id/action_auth"
+        android:title="@string/action_auth"
+        android:icon="@android:drawable/ic_menu_edit"
+        >
+    </item>
+    <item
+        android:id="@+id/action_deauthentication"
+        android:title="@string/action_deauth"
+        >
+    </item>
+</menu>

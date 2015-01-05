@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:orientation="vertical">
+
+
+    <CheckBox
+        android:id="@+id/omikuji"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="おみくじ"/>
+
+    <CheckBox
+        android:id="@+id/meshi"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="めし"/>
+
+    <CheckBox
+        android:id="@+id/seiyu"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="声優"/>
+
+    <CheckBox
+        android:id="@+id/precure"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="プリキュア"/>
+
+    <CheckBox
+        android:id="@+id/pokemon"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="ポケモン"/>
+
+    <CheckBox
+        android:id="@+id/lovelive"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="ラブライブ"/>
+
+</LinearLayout>

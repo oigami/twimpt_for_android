@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="horizontal"
+              android:layout_width="fill_parent"
+              android:layout_height="wrap_content"
+              android:descendantFocusability="blocksDescendants">
+
+    <ImageView
+        android:id="@+id/user_image"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_gravity="left"/>
+
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                  android:orientation="vertical"
+                  android:layout_width="fill_parent"
+                  android:layout_height="wrap_content"
+                  android:layout_marginLeft="10dp"
+                  android:descendantFocusability="blocksDescendants">
+
+        <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                        android:orientation="horizontal"
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content"
+                        android:descendantFocusability="blocksDescendants">
+
+            <TextView
+                android:focusableInTouchMode="false"
+                android:focusable="false"
+                android:id="@+id/name"
+                android:layout_width="wrap_content"
+                android:layout_height="20dp"
+                android:text="ユーザーネーム"
+                android:textColor="#8bdbe8"
+                android:ellipsize="end"
+                android:singleLine="true"/>
+
+            <TextView
+                android:focusableInTouchMode="false"
+                android:focusable="false"
+                android:id="@+id/time"
+                android:layout_width="wrap_content"
+                android:layout_height="20dp"
+                android:text="time"
+                android:textColor="#8bdbe8"
+                android:singleLine="true"
+                android:layout_centerInParent="true"
+                android:layout_alignParentRight="true"
+                android:layout_marginRight="10dp"/>
+        </RelativeLayout>
+
+        <TextView
+            android:focusableInTouchMode="true"
+            android:focusable="false"
+            android:id="@+id/text"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:text="テキスト"
+
+            android:paddingRight="10dp"/>
+
+        <TextView
+            android:focusableInTouchMode="false"
+            android:focusable="false"
+            android:id="@+id/room_name"
+            android:layout_width="fill_parent"
+            android:layout_height="20dp"
+            android:text="ルームネーム"
+            android:textColor="#8bdbe8"
+            android:gravity="right"
+            android:paddingRight="10dp"
+            android:ellipsize="end"
+            android:singleLine="true"/>
+    </LinearLayout>
+
+</LinearLayout>

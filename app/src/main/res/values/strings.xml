@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">twimpt</string>
+    <string name="room_list_name">ルーム一覧</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="action_deauth">認証解除</string>
+    <string name="action_auth">認証</string>
+    <string name="post_request">投稿</string>
+    <string name="update_request">更新</string>
+    <string name="public_name">パブリック</string>
+    <string name="monologue_name">ひとりごと</string>
+    <string name="recent_created_name">最近新しく作られた話題</string>
+    <string name="recent_posted_name">最近投稿のあった話題</string>
+    <string name="recent_opened_name">最近開いた話題</string>
+    <string name="open_official_now_page">公式ページで開く</string>
+    <string name="setting">設定</string>
+    <string name="yes">はい</string>
+    <string name="no">いいえ</string>
+    <string name="cancel">キャンセル</string>
+    <string name="load_log">更に前の投稿を読み込む</string>
+    <string name="open_room">ルームを開く</string>
+    <string name="write_room">ルームに書き込み</string>
+    <string name="encourage_auth">メニューから認証してください</string>
+    <string name="authenticated">すでに認証しています</string>
+    <string name="not_authenticated">認証されていません</string>
+    <string name="authenticated_release">認証を解除しました</string>
+    <string name="update_error">更新エラー</string>
+    <string name="updating">更新中</string>
+    <string name="confirmation">確認</string>
+    <string name="confirmation_post_to_public">"ひとりごとに投稿しますが、\nよろしいですか？"</string>
+    <string name="insert_lottery_command">くじ引きコマンドの挿入</string>
+    <string name="insert">挿入</string>
+</resources>
