@@ -23,21 +23,21 @@ public class ImageDownloadCacheTask extends AsyncTask<String, Void, Void> {
   private static final String TAG = "ImageDownloadCacheTask";
 
   private Context mContext;
+  ImageCacheDB db;
 
-  public ImageDownloadCacheTask(Context context) {
+  public ImageDownloadCacheTask(ImageCacheDB database, Context context) {
     mContext = context;
+    db = database;
   }
 
   @Override
   protected Void doInBackground(String... urls) {
-    ImageCacheDB db = ImageCacheDB.getInstance(mContext);
     long id = 0;
     HttpClient httpClient = null;
     for (String url : urls) {
       Cursor c = db.exists(url);
       if (!c.moveToFirst()) {
         try {
-          id = db.insert(url);
           HttpGet httpRequest = new HttpGet(url);
           httpClient = new DefaultHttpClient();
           HttpResponse response;
@@ -46,19 +46,16 @@ public class ImageDownloadCacheTask extends AsyncTask<String, Void, Void> {
           BufferedHttpEntity bufHttpEntity = new BufferedHttpEntity(entity);
 
           // ファイルに保存
-          String filename = String.format("%06d", id);
           String type = entity.getContentType().getValue();
-          FileOutputStream stream = mContext.openFileOutput(filename, Context.MODE_PRIVATE);
+          FileOutputStream stream = db.openFileOutput(url, type, mContext);
           InputStream is = bufHttpEntity.getContent();
           byte[] data = new byte[4096];
           int size;
-          while((size = is.read(data)) > 0) {
+          while ((size = is.read(data)) > 0) {
             stream.write(data, 0, size);
           }
           stream.close();
           is.close();
-          // キャッシュディレクトリに画像を保存する
-          db.update(id, filename, type);
         } catch (Exception e) {
           Log.e(TAG, e.getClass().getSimpleName(), e);
           if (id > 0) {

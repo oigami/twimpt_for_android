@@ -5,7 +5,12 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.graphics.drawable.Drawable;
 
+import com.example.oigami.twimpt.debug.Logger;
+
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.util.Date;
 
 /**
@@ -13,13 +18,18 @@ import java.util.Date;
  */
 public class ImageCacheDB extends SQLiteOpenHelper {
 
-  private static final String DB_FILE = "imagecache.db";
+  private String dbFileName;
   public static final String TBL_CACHE = "ImageCache";
   private static final int DB_VERSION = 1;
 
   public interface CacheColumn {
     public static final String ID = "_id";
-    public static final String NAME = "fileName";
+    /**
+     * 内部のファイル名と実際のファイル名が違う 内部では id番号が入っているだけだが<br>
+     * 外部ではdbFileName+"_"+idになっている
+     * TODO もはやある必要がないのでそのうち削除する予定
+     */
+    public static final String FILENAME = "fileName";
     public static final String REGIST_DATE = "registDate";
     public static final String URL = "url";
     public static final String TYPE = "type";
@@ -29,16 +39,22 @@ public class ImageCacheDB extends SQLiteOpenHelper {
 
   public static ImageCacheDB instance;
 
-  private ImageCacheDB(Context context) {
-    super(context, DB_FILE, null, DB_VERSION);
+  public String getDbFileName() {
+    return dbFileName;
   }
 
-  public static ImageCacheDB getInstance(Context context) {
-    if (instance == null) {
-      instance = new ImageCacheDB(context);
-    }
-    return instance;
+
+  public ImageCacheDB(Context context, String dbFileName) {
+    super(context, dbFileName, null, DB_VERSION);
+    this.dbFileName = dbFileName;
   }
+
+//  public static ImageCacheDB getInstance(Context context) {
+//    if (instance == null) {
+//      instance = new ImageCacheDB(context);
+//    }
+//    return instance;
+//  }
 
   synchronized private SQLiteDatabase getDB() {
     if (mDB == null) {
@@ -61,7 +77,7 @@ public class ImageCacheDB extends SQLiteOpenHelper {
                     + CacheColumn.REGIST_DATE + " INTEGER,"
                     + CacheColumn.URL + " VARCHAR(300),"
                     + CacheColumn.TYPE + " VARCHAR(100),"
-                    + CacheColumn.NAME + " VARCHAR(20))"
+                    + CacheColumn.FILENAME + " VARCHAR(20))"
     );
   }
 
@@ -80,7 +96,7 @@ public class ImageCacheDB extends SQLiteOpenHelper {
   public int update(long id, String filename, String type) {
     ContentValues values = new ContentValues();
     values.put(CacheColumn.TYPE, type);
-    values.put(CacheColumn.NAME, filename);
+    values.put(CacheColumn.FILENAME, filename);
     return getDB().update(TBL_CACHE, values, CacheColumn.ID + " = ?", new String[]{String.valueOf(id)});
   }
 
@@ -91,8 +107,9 @@ public class ImageCacheDB extends SQLiteOpenHelper {
   public Cursor exists(String url) {
     return getDB().query(TBL_CACHE, null, CacheColumn.URL + " = ?", new String[]{url}, null, null, null);
   }
+
   public Cursor existsFile(String url) {
-    return getDB().query(TBL_CACHE, null, CacheColumn.URL + " = ? AND " + CacheColumn.NAME + " IS NOT NULL", new String[]{url}, null, null, null);
+    return getDB().query(TBL_CACHE, null, CacheColumn.URL + " = ? AND " + CacheColumn.FILENAME + " IS NOT NULL", new String[]{url}, null, null, null);
   }
 
   public Cursor findOlderCache() {
@@ -118,5 +135,38 @@ public class ImageCacheDB extends SQLiteOpenHelper {
     }
     this.close();
     super.finalize();
+  }
+
+  /*  画像をデータベース取得する            */
+  public Drawable getDrawable(String url, Context cxt) {
+    final Cursor c = existsFile(url);
+    if (c.moveToFirst()) {
+      final String filename = c.getString(c.getColumnIndex(ImageCacheDB.CacheColumn.FILENAME));
+      final String type = c.getString(c.getColumnIndex(ImageCacheDB.CacheColumn.TYPE));
+      if (type.equals("image/jpg") || type.equals("image/jpeg") || type.equals("image/png") || type.equals("image/gif")) {
+        Logger.log("Drawable load:" + url);
+        return Drawable.createFromPath(cxt.getFileStreamPath(getDbFileName() + "_" + filename).getAbsolutePath());
+        //setImageDrawable(drawable);
+        //setVisibility(RemoteImageView.VISIBLE);
+      }
+    }
+    return null;
+  }
+
+  /**
+   * 画像ファイルを保存する<br>
+   * この関数ではファイルを開くだけなので書き込みを別途する必要がある
+   * @param url     画像があるurl
+   * @param type    画像のフォーマットタイプ
+   * @param context
+   * @return 保存するためのFileOutputStream
+   * @throws FileNotFoundException
+   */
+  public FileOutputStream openFileOutput(String url, String type, Context context) throws FileNotFoundException {
+    long id = insert(url);
+    String filename = String.format("%06d", id);
+    FileOutputStream stream = context.openFileOutput(getDbFileName() + "_" + filename, Context.MODE_PRIVATE);
+    update(id, filename, type);
+    return stream;
   }
 }

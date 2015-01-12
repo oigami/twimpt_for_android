@@ -3,7 +3,7 @@ package com.example.oigami.twimpt;
 import java.util.Calendar;
 
 /**
- * Created by oigami on 2014/11/04.
+ * Created by oigami on 2014/11/04
  */
 public class TimeDiff {
 

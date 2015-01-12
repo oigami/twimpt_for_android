@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Created by oigami on 2014/10/03.
+ * Created by oigami on 2014/10/03
  */
 
 public class TwimptJson {
@@ -66,7 +66,7 @@ public class TwimptJson {
     JSONArray log_data_list = json.getJSONArray("log_data_list");
     JSONObject log_data;
     parsedData.mTwimptLogData = new TwimptLogData[log_data_list.length()];
-    for (int i =0;i< log_data_list.length(); i++) {
+    for (int i = 0; i < log_data_list.length(); i++) {
       log_data = log_data_list.getJSONObject(i);
       TwimptLogData twimpt_log_data = parsedData.mTwimptLogData[i] = new TwimptLogData();
       TwimptLogDataParse(twimpt_log_data, parsedData.mTwimptRooms, log_data);
@@ -76,9 +76,11 @@ public class TwimptJson {
     log_data = null;
     return parsedData;
   }
- public static ParsedData UpdateParse(JSONObject json) throws JSONException {
-  return UpdateLogParse(json);
- }
+
+  public static ParsedData UpdateParse(JSONObject json) throws JSONException {
+    return UpdateLogParse(json);
+  }
+
   public static ParsedData LogParse(JSONObject json) throws JSONException {
     return UpdateLogParse(json);
   }
@@ -104,8 +106,11 @@ public class TwimptJson {
   /*
   ここから認証関係
    */
-  public static RequestTokenData RequestTokenParse(JSONObject json) throws JSONException {
+  public static RequestTokenData RequestTokenParse(JSONObject json) throws JSONException, TwimptNetException {
     RequestTokenData outData = new RequestTokenData();
+    if (!json.isNull("error_code")) {
+      throw new TwimptNetException("error_code:" + json.getInt("error_code") + "\n" + json.getString("error_params"));
+    }
     outData.token = json.getString("request_token");
     outData.secret = json.getString("request_token_secret");
     return outData;
@@ -118,4 +123,10 @@ public class TwimptJson {
     return outData;
   }
 
+}
+
+class TwimptNetException extends Exception {
+  public TwimptNetException(String str) {
+    super(str);
+  }
 }

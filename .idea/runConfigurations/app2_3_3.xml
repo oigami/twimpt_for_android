@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="app2.3.3" type="AndroidRunConfigurationType" factoryName="Android Application">
     <module name="app" />
-    <option name="ACTIVITY_CLASS" value="com.example.oigami.twimpt.RoomActivity" />
+    <option name="ACTIVITY_CLASS" value="com.example.oigami.twimpt.activity.RoomActivity" />
     <option name="MODE" value="default_activity" />
     <option name="DEPLOY" value="true" />
     <option name="ARTIFACT_NAME" value="" />

@@ -3,7 +3,9 @@
               android:orientation="horizontal"
               android:layout_width="fill_parent"
               android:layout_height="wrap_content"
-              android:descendantFocusability="blocksDescendants">
+              android:descendantFocusability="blocksDescendants"
+    android:padding="0dp"
+    android:layout_margin="0dp">
 
     <ImageView
         android:id="@+id/user_image"
@@ -71,6 +73,18 @@
             android:paddingRight="10dp"
             android:ellipsize="end"
             android:singleLine="true"/>
+
+        <GridView
+            android:layout_width="wrap_content"
+            android:layout_height="60dp"
+            android:padding="0dp"
+            android:layout_margin="0dp"
+            android:numColumns="auto_fit"
+            android:columnWidth="60dp"
+            android:stretchMode="none"
+            android:verticalSpacing="1dp"
+            android:horizontalSpacing="1dp"
+            android:id="@+id/gridImageView"/>
     </LinearLayout>
 
 </LinearLayout>

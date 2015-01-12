@@ -23,10 +23,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 /**
- * Created by oigami on 2014/10/03.
+ * Created by oigami on 2014/10/03
  */
 public class RecentRoomActivity extends ActionBarActivity {
-  static public String INTENT_ROOM_RECENT_NAME="RECENT_ROOM_NAME";
+  static public String INTENT_ROOM_RECENT_NAME = "RECENT_ROOM_NAME";
   DataApplication globals;
   int mNowPage = 1;
   String mRecentUrl;
@@ -69,7 +69,7 @@ public class RecentRoomActivity extends ActionBarActivity {
       public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
         Intent intent1 = new Intent(RecentRoomActivity.this, RoomActivity.class);
         intent1.putExtra(RoomActivity.INTENT_ROOM_NAME_HASH, mArrayListHash.get(i));
-        intent1.putExtra(RoomActivity.INTENT_NAME_TYPE,"room");
+        intent1.putExtra(RoomActivity.INTENT_NAME_TYPE, "room");
 
         startActivity(intent1);
       }
@@ -81,25 +81,24 @@ public class RecentRoomActivity extends ActionBarActivity {
   }
 
   public void GetRecentRoomData() {
-    if (mNowUpdate == false) {
-      mNowUpdate = true;
-      new Thread(new Runnable() {
-        @Override
-        public void run() {
-          try {
-            final JSONObject json = Twimpt.GetRecentRoomDataList(mRecentUrl, mNowPage);
-            if (mNowPage == 1)
-              mArrayListHash.clear();
-            TwimptJson.RecentRoomListParse(globals.twimptRooms, json, mArrayListHash);
-          } catch (IOException e) {
-            e.printStackTrace();
-          } catch (JSONException e) {
-            e.printStackTrace();
-          }
-          mHandler.sendEmptyMessage(0);
+    if (!mNowUpdate) return;
+    mNowUpdate = true;
+    new Thread(new Runnable() {
+      @Override
+      public void run() {
+        try {
+          final JSONObject json = Twimpt.GetRecentRoomDataList(mRecentUrl, mNowPage);
+          if (mNowPage == 1)
+            mArrayListHash.clear();
+          TwimptJson.RecentRoomListParse(globals.twimptRooms, json, mArrayListHash);
+        } catch (IOException e) {
+          e.printStackTrace();
+        } catch (JSONException e) {
+          e.printStackTrace();
         }
-      }).start();
-    }
+        mHandler.sendEmptyMessage(0);
+      }
+    }).start();
   }
 
   private class RecentRoomsListAdapter extends BaseAdapter {

@@ -14,7 +14,7 @@ import org.json.JSONObject;
 import java.io.IOException;
 
 /**
- * Created by oigami on 2014/10/01.
+ * Created by oigami on 2014/10/01
  */
 
 enum TwimptAsyncType {
@@ -26,7 +26,7 @@ enum TwimptAsyncType {
 
 class TwimptAsyncTaskParams {
   TwimptRoom mTwimptRoom;
-  JSONObject mJSONObjecton;
+  JSONObject mJSONObject;
 }
 
 public class TwimptAsyncTask extends AsyncTask<Void, Void, TwimptAsyncTaskParams> {
@@ -81,7 +81,7 @@ public class TwimptAsyncTask extends AsyncTask<Void, Void, TwimptAsyncTaskParams
 
     Log.d("RoomActivity.java", "doInBackground");
     try {
-      twimptAsyncTaskParams.mJSONObjecton = Update();
+      twimptAsyncTaskParams.mJSONObject = Update();
     } catch (JSONException e) {
       Log.e("TwimptAsyncTask.java", e.toString());
       e.printStackTrace();

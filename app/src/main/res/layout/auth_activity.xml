@@ -19,4 +19,5 @@
         android:text="認証画面を開く"
         android:id="@+id/auth_url_button"
         android:layout_gravity="center_horizontal"/>
+
 </LinearLayout>

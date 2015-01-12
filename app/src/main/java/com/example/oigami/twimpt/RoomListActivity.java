@@ -16,7 +16,7 @@ import android.support.v7.app.ActionBarActivity;
 import java.util.Map;
 
 /**
- * Created by oigami on 2014/10/02.
+ * Created by oigami on 2014/10/02
  */
 public class RoomListActivity extends ActionBarActivity {
   DataApplication globals;
@@ -25,18 +25,16 @@ public class RoomListActivity extends ActionBarActivity {
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.room_list_activity);
-
     globals = (DataApplication) this.getApplication();
-
-
     Resources res = getResources();
 
+    /* type値をhashとして扱う
+       ただし、TwimptRoomの中のhashはnullのまま    */
     //monologueは例外扱い
     TwimptRoom monologueRoom = new TwimptRoom();
     monologueRoom.type = "monologue";
     monologueRoom.name = res.getString(R.string.monologue_name);
     globals.twimptRooms.put(monologueRoom.type, monologueRoom);
-
     //publicは例外扱い
     TwimptRoom publicRoom = new TwimptRoom();
     publicRoom.type = "public";
@@ -69,8 +67,6 @@ public class RoomListActivity extends ActionBarActivity {
           case 0:
           case 1: {
             roomHash = hash[position];
-            Map<String, TwimptRoom> twimptRoomMap = globals.twimptRooms;
-            TwimptRoom twimptRoom = twimptRoomMap.get(roomHash);
             Intent intent = new Intent(RoomListActivity.this, RoomActivity.class);
             intent.putExtra(RoomActivity.INTENT_ROOM_NAME_HASH, roomHash);
             //intent.putExtra("keyword", globals.twimptRooms.get(now_room));
@@ -103,8 +99,7 @@ public class RoomListActivity extends ActionBarActivity {
       }
 
       @Override
-      public void onNothingSelected(AdapterView<?> parent) {
-      }
+      public void onNothingSelected(AdapterView<?> parent) {}
 
     });
   }
@@ -114,7 +109,6 @@ public class RoomListActivity extends ActionBarActivity {
     // Inflate the menu; this adds items to the action bar if it is present.
     getMenuInflater().inflate(R.menu.room_list, menu);
     // メニューの要素を追加
-
     return true;
   }
 

@@ -1,4 +1,4 @@
-package com.example.oigami.twimpt;
+package com.example.oigami.twimpt.textLink;
 
 import android.net.Uri;
 import android.text.Layout;

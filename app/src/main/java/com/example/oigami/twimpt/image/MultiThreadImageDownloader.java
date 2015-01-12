@@ -3,13 +3,14 @@ package com.example.oigami.twimpt.image;
 import android.content.Context;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by oigami on 2014/10/02.
  */
 public class MultiThreadImageDownloader {
 
-  public static void execute(Context context, ArrayList<String> urls) {
+  public static void execute(ImageCacheDB db,Context context, List<String> urls) {
     ArrayList<String> list1 = new ArrayList<String>();
     ArrayList<String> list2 = new ArrayList<String>();
     ArrayList<String> list3 = new ArrayList<String>();
@@ -22,8 +23,8 @@ public class MultiThreadImageDownloader {
       }
       i++;
     }
-    new ImageDownloadCacheTask(context).execute((String[])list1.toArray(new String[0]));
-    new ImageDownloadCacheTask(context).execute((String[])list2.toArray(new String[0]));
-    new ImageDownloadCacheTask(context).execute((String[])list3.toArray(new String[0]));
+    new ImageDownloadCacheTask(db,context).execute((String[])list1.toArray(new String[0]));
+    new ImageDownloadCacheTask(db,context).execute((String[])list2.toArray(new String[0]));
+    new ImageDownloadCacheTask(db,context).execute((String[])list3.toArray(new String[0]));
   }
 }
