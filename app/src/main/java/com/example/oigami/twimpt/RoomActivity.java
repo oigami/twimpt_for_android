@@ -469,6 +469,7 @@ public class RoomActivity extends ActionBarActivity {
       Toast.makeText(RoomActivity.this, R.string.updating, Toast.LENGTH_SHORT).show();
       return;
     }
+    
     exec.execute(new Runnable() {
       @Override
       public void run() { LogRequestRun(); }
