@@ -173,7 +173,7 @@ public class RoomActivity extends ActionBarActivity {
         UpdateRequest();
       }
     });
-    mSwipeRefreshWidget.setRefreshing(true);
+    //mSwipeRefreshWidget.setRefreshing(true);
 
     UpdateRequest();
 
@@ -443,10 +443,12 @@ public class RoomActivity extends ActionBarActivity {
   /** 最新ログの取得スレッドを実行 */
   private void UpdateRequest() {
     if (!TwimptAsyncTask.isConnected(this)) {
+      RefreshEnd();
       Toast.makeText(RoomActivity.this, R.string.update_error, Toast.LENGTH_LONG).show();
       return;
     }
     if (!RefreshStart()) {
+      RefreshEnd();
       Toast.makeText(RoomActivity.this, R.string.updating, Toast.LENGTH_SHORT).show();
       return;
     }
@@ -458,10 +460,12 @@ public class RoomActivity extends ActionBarActivity {
 
   private void LogRequest() {
     if (!TwimptAsyncTask.isConnected(RoomActivity.this)) {
+      RefreshEnd();
       Toast.makeText(RoomActivity.this, R.string.update_error, Toast.LENGTH_LONG).show();
       return;
     }
     if (!RefreshStart()) {
+      RefreshEnd();
       Toast.makeText(RoomActivity.this, R.string.updating, Toast.LENGTH_SHORT).show();
       return;
     }
@@ -789,17 +793,20 @@ public class RoomActivity extends ActionBarActivity {
           holder.mGridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
               ImageAdapter imageAdapter = (ImageAdapter) parent.getAdapter();
-              Intent intent = new Intent(RoomActivity.this, ImageViewActivity.class);
               //drawableをbitmapに変換する
               ByteArrayOutputStream bos = new ByteArrayOutputStream();
               Drawable drawable = imageAdapter.getItem(position);
               if (drawable == null) return;
               Bitmap bitmap = ((BitmapDrawable) drawable).getBitmap();
               //bitmapをbyte[]にする
-              bitmap.compress(Bitmap.CompressFormat.PNG, 100, bos);
+              if(!bitmap.compress(Bitmap.CompressFormat.JPEG, 100, bos)){
+                Toast.makeText(RoomActivity.this,"画像形式が不正です",Toast.LENGTH_LONG).show();
+                return;
+              }
               byte[] bitmapByte = bos.toByteArray();
+              if(bitmapByte==null)return;
+              Intent intent = new Intent(RoomActivity.this, ImageViewActivity.class);
               intent.putExtra(ImageViewActivity.INTENT_BITMAP_BYTE_ARRAY, bitmapByte);
-              //intent.setFlags(FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY);
               startActivity(intent);
             }
           });
@@ -866,7 +873,7 @@ public class RoomActivity extends ActionBarActivity {
     public void TextDecode(TwimptLogData logData) {
       if (logData.decodedText != null) return;
 //      logData.text="<a href=\"http://twimpt.com/upload/original/20150110/CGMIadXM.png\" data-lightbox=\"uploaded-image\"><img src=\"http://twimpt.com/upload/thumbnail/20150110/256/CGMIadXM.png\" class=\"imageThumbnail\" /></a>";
-//      logData.text+="<a href=\"http://twimpt.com/upload/original/20150110/CGMIadXM.png\" data-lightbox=\"uploaded-image\"><img src=\"http://twimpt.com/upload/thumbnail/20150110/256/CGMIadXM.png\" class=\"imageThumbnail\" /></a>";
+//      logData.text+="\n<a href=\"http://twimpt.com/upload/original/20150110/CGMIadXM.png\" data-lightbox=\"uploaded-image\"><img src=\"http://twimpt.com/upload/thumbnail/20150110/256/CGMIadXM.png\" class=\"imageThumbnail\" /></a>";
 
       //TODO デコードにraw_textを使った方がいいが全てのタグを変換するのが面倒なので今はtextの方を使う
       //imgタグのデコード

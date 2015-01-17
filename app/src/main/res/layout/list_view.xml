@@ -84,7 +84,8 @@
             android:stretchMode="none"
             android:verticalSpacing="1dp"
             android:horizontalSpacing="1dp"
-            android:id="@+id/gridImageView"/>
+            android:id="@+id/gridImageView"
+            android:clickable="false"/>
     </LinearLayout>
 
 </LinearLayout>
