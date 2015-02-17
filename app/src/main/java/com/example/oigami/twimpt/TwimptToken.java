@@ -3,6 +3,9 @@ package com.example.oigami.twimpt;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import com.example.oigami.twimpt.twimpt.token.AccessTokenData;
+import com.example.oigami.twimpt.twimpt.token.RequestTokenData;
+
 /**
  * Created by oigami on 2015/01/11
  */
@@ -71,12 +74,3 @@ public class TwimptToken {
   }
 }
 
-class RequestTokenData {
-  String token;
-  String secret;
-}
-
-class AccessTokenData {
-  String token;
-  String secret;
-}

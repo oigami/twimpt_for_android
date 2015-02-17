@@ -25,10 +25,11 @@
     <string name="authenticated">すでに認証しています</string>
     <string name="not_authenticated">認証されていません</string>
     <string name="authenticated_release">認証を解除しました</string>
-    <string name="update_error">更新エラー</string>
+    <string name="update_network_error">ネットワークにつながっているか確認して下さい</string>
     <string name="updating">更新中</string>
     <string name="confirmation">確認</string>
     <string name="confirmation_post_to_public">"ひとりごとに投稿しますが、\nよろしいですか？"</string>
     <string name="insert_lottery_command">くじ引きコマンドの挿入</string>
     <string name="insert">挿入</string>
+    <string name="censored">禁則事項です</string>
 </resources>

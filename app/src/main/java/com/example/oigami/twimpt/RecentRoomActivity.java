@@ -16,6 +16,9 @@ import android.widget.BaseAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.example.oigami.twimpt.twimpt.TwimptJson;
+import com.example.oigami.twimpt.twimpt.TwimptNetwork;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -87,7 +90,7 @@ public class RecentRoomActivity extends ActionBarActivity {
       @Override
       public void run() {
         try {
-          final JSONObject json = Twimpt.GetRecentRoomDataList(mRecentUrl, mNowPage);
+          final JSONObject json = TwimptNetwork.GetRecentRoom(mRecentUrl, mNowPage);
           if (mNowPage == 1)
             mArrayListHash.clear();
           TwimptJson.RecentRoomListParse(globals.twimptRooms, json, mArrayListHash);

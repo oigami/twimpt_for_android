@@ -9,6 +9,9 @@ import android.view.View;
 import android.widget.Toast;
 
 import com.example.oigami.twimpt.debug.Logger;
+import com.example.oigami.twimpt.twimpt.TwimptNetwork;
+import com.example.oigami.twimpt.twimpt.token.AccessTokenData;
+import com.example.oigami.twimpt.twimpt.token.RequestTokenData;
 
 import org.json.JSONObject;
 
@@ -16,12 +19,11 @@ import org.json.JSONObject;
  * Created by oigami on 2014/10/05
  */
 public class TwimptAuthActivity extends Activity {
-  static final String AUTH_ID = "";
-  static final String API_KEY = "";
-  static final String API_KEY_SECRET = "";
+
   boolean mNowUpdate = false;
   Handler mHandler = new Handler();
   View button;
+
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -65,10 +67,9 @@ public class TwimptAuthActivity extends Activity {
         @Override
         public void run() {
           try {
-            final JSONObject json = Twimpt.GetRequestToken(API_KEY, API_KEY_SECRET);
+            final JSONObject json = TwimptNetwork.GetRequestToken(TwimptDeveloperData.API_KEY, TwimptDeveloperData.API_KEY_SECRET);
             Logger.log(json.toString(2));
-            final RequestTokenData requestTokenData;
-            requestTokenData = TwimptJson.RequestTokenParse(json);
+            final RequestTokenData requestTokenData = new RequestTokenData(json);
             mHandler.post(new Runnable() {
               @Override
               public void run() {
@@ -82,7 +83,7 @@ public class TwimptAuthActivity extends Activity {
             mHandler.post(new Runnable() {
               @Override
               public void run() {
-                Toast.makeText(TwimptAuthActivity.this, e.getMessage()+ "\n\n" + Logger.getStackTraceString(e), Toast.LENGTH_LONG).show();
+                Toast.makeText(TwimptAuthActivity.this, e.getMessage() + "\n\n" + Logger.getStackTraceString(e), Toast.LENGTH_LONG).show();
               }
             });
           }
@@ -100,8 +101,8 @@ public class TwimptAuthActivity extends Activity {
         public void run() {
           RequestTokenData requestToken = TwimptToken.GetRequestToken(TwimptAuthActivity.this);
           try {
-            final JSONObject json = Twimpt.GetAccessToken(API_KEY, API_KEY_SECRET, requestToken.token, requestToken.secret);
-            final AccessTokenData accessTokenData = TwimptJson.AccessTokenParse(json);
+            final JSONObject json = TwimptNetwork.GetAccessToken(TwimptDeveloperData.API_KEY, TwimptDeveloperData.API_KEY_SECRET, requestToken.token, requestToken.secret);
+            final AccessTokenData accessTokenData = new AccessTokenData(json);
             mHandler.post(new Runnable() {
               @Override
               public void run() {
@@ -124,7 +125,7 @@ public class TwimptAuthActivity extends Activity {
   }
 
   private void GoAuthWebPage(RequestTokenData requestTokenData) {
-    Uri uri = Uri.parse(Twimpt.GetAuthURL(AUTH_ID, requestTokenData.token, requestTokenData.secret));
+    Uri uri = Uri.parse(TwimptNetwork.GetAuthURL(TwimptDeveloperData.AUTH_ID, requestTokenData.token, requestTokenData.secret));
     Intent i = new Intent(Intent.ACTION_VIEW, uri);
     startActivity(i);
   }

@@ -23,6 +23,11 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.oigami.twimpt.twimpt.TwimptJson;
+import com.example.oigami.twimpt.twimpt.TwimptNetwork;
+import com.example.oigami.twimpt.twimpt.TwimptRoom;
+import com.example.oigami.twimpt.twimpt.token.AccessTokenData;
+
 import org.json.JSONObject;
 
 
@@ -128,7 +133,7 @@ public class PostActivity extends ActionBarActivity {
       public void run() {
         try {
           AccessTokenData accessToken = TwimptToken.GetAccessToken(PostActivity.this);
-          JSONObject json = Twimpt.PostRequest(accessToken.token, accessToken.secret,
+          JSONObject json = TwimptNetwork.PostRequest(accessToken.token, accessToken.secret,
                   postTwimptRoom.type, postTwimptRoom.hash, message.getText().toString(),
                   nowTwimptRoom.type, nowTwimptRoom.hash, nowTwimptRoom.getLatestLogHash(), nowTwimptRoom.LatestModifyHash);
           final TwimptJson.ParsedData parsedData = TwimptJson.UpdateParse(json);
