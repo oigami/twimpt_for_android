@@ -10,11 +10,8 @@ import com.example.oigami.twimpt.twimpt.token.RequestTokenData;
  * Created by oigami on 2015/01/11
  */
 public class TwimptToken {
-  public static final int AccessToken = 0;
-  public static final int AccessTokenSecret = 1;
-
   /**
-   * @param context
+   * @param context activity
    * @return null or トークン
    */
   public static RequestTokenData GetRequestToken(Context context) {
@@ -44,7 +41,7 @@ public class TwimptToken {
   }
 
   /**
-   * @param context
+   * @param context activity
    * @return null or トークン
    */
   public static AccessTokenData GetAccessToken(Context context) {

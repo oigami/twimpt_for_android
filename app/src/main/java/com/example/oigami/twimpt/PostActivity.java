@@ -23,12 +23,13 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.oigami.twimpt.twimpt.TwimptJson;
 import com.example.oigami.twimpt.twimpt.TwimptNetwork;
-import com.example.oigami.twimpt.twimpt.TwimptRoom;
+import com.example.oigami.twimpt.twimpt.room.TwimptRoom;
 import com.example.oigami.twimpt.twimpt.token.AccessTokenData;
 
 import org.json.JSONObject;
+
+import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
@@ -40,8 +41,8 @@ public class PostActivity extends ActionBarActivity {
     LOTTERY,
   }
 
-  static public String INTENT_POST_HASH = "POST_HASH";
-  static public String INTENT_NOW_HASH = "NOW_HASH";
+  public static final String INTENT_POST_HASH = "POST_HASH";
+  public static final String INTENT_NOW_HASH = "NOW_HASH";
   private DataApplication globals;
   boolean mNowUpdate = false;
   private String mNowRoomHash, mPostRoomHash;
@@ -102,22 +103,22 @@ public class PostActivity extends ActionBarActivity {
     AlertDialogFragment dlg;
     CONTEXT_MENU menu = CONTEXT_MENU.values()[item.getItemId()];
     switch (menu) {
-      case CANCEL:
-        return super.onContextItemSelected(item);
-      case OMIKUJI:
-        dlg = AlertDialogFragment.CreateLotteryDialog();
-        dlg.show(getSupportFragmentManager(), "tag");
-        return true;
-      case DEFAULT:
-        //TODO 仕様が微妙なので処理方法を考える
-        // unregisterForContextMenu(mPostMessageEdit);
-        //mPostMessageEdit.selectAll();
-        //mPostMessageEdit.performLongClick();
-        //registerForContextMenu(mPostMessageEdit);
-        return true;
-      default:
-        Toast.makeText(this, "エラー", Toast.LENGTH_LONG).show();
-        return super.onContextItemSelected(item);
+    case CANCEL:
+      return super.onContextItemSelected(item);
+    case OMIKUJI:
+      dlg = AlertDialogFragment.CreateLotteryDialog();
+      dlg.show(getSupportFragmentManager(), "tag");
+      return true;
+    case DEFAULT:
+      //TODO 仕様が微妙なので処理方法を考える
+      // unregisterForContextMenu(mPostMessageEdit);
+      //mPostMessageEdit.selectAll();
+      //mPostMessageEdit.performLongClick();
+      //registerForContextMenu(mPostMessageEdit);
+      return true;
+    default:
+      Toast.makeText(this, "エラー", Toast.LENGTH_LONG).show();
+      return super.onContextItemSelected(item);
     }
   }
 
@@ -125,8 +126,9 @@ public class PostActivity extends ActionBarActivity {
     if (mNowUpdate)
       return;
     mNowUpdate = true;
-    final TwimptRoom nowTwimptRoom = globals.twimptRooms.get(mNowRoomHash);
-    final TwimptRoom postTwimptRoom = globals.twimptRooms.get(mPostRoomHash);
+    final ConcurrentHashMap<String, TwimptRoom> twimptRooms = globals.twimptRooms;
+    final TwimptRoom nowTwimptRoom = twimptRooms.get(mNowRoomHash);
+    final TwimptRoom postTwimptRoom = twimptRooms.get(mPostRoomHash);
     final TextView message = (TextView) findViewById(R.id.post_message);
     new Thread(new Runnable() {
       @Override
@@ -134,19 +136,22 @@ public class PostActivity extends ActionBarActivity {
         try {
           AccessTokenData accessToken = TwimptToken.GetAccessToken(PostActivity.this);
           JSONObject json = TwimptNetwork.PostRequest(accessToken.token, accessToken.secret,
-                  postTwimptRoom.type, postTwimptRoom.hash, message.getText().toString(),
-                  nowTwimptRoom.type, nowTwimptRoom.hash, nowTwimptRoom.getLatestLogHash(), nowTwimptRoom.LatestModifyHash);
-          final TwimptJson.ParsedData parsedData = TwimptJson.UpdateParse(json);
+                                                      postTwimptRoom.type, postTwimptRoom.hash, message.getText().toString(),
+                                                      nowTwimptRoom.type, nowTwimptRoom.hash, nowTwimptRoom.getLatestLogHash(),
+                                                      nowTwimptRoom.LatestModifyHash);
+          final ParsedData parsedData = new ParsedData(json, twimptRooms);
           mHandler.post(new Runnable() {
             @Override
             public void run() {
-              RoomActivity.PushData(PostActivity.this, globals.twimptRooms, nowTwimptRoom, parsedData, true);
+              RoomActivity.PushUpdateData(globals.twimptRooms, nowTwimptRoom, parsedData);
+              mNowUpdate = false;
+              finish();
             }
           });
         } catch (Exception e) {
           e.printStackTrace();
+          mHandler.sendEmptyMessage(0);
         }
-        mHandler.sendEmptyMessage(0);
       }
     }).start();
   }
@@ -157,7 +162,8 @@ public class PostActivity extends ActionBarActivity {
    * setArguments()で"id"を使い表示するダイアログを制御
    */
   public static class AlertDialogFragment extends DialogFragment {
-    public AlertDialogFragment() { }
+    public AlertDialogFragment() {
+    }
 
     /*くじ引き挿入ダイアログの作成 */
     public static AlertDialogFragment CreateLotteryDialog() {
@@ -175,10 +181,10 @@ public class PostActivity extends ActionBarActivity {
       DIALOG[] values = DIALOG.values();
       DIALOG dialogID = values[getArguments().getInt("id")];
       switch (dialogID) {
-        case LOTTERY:
-          PostActivity This = ((PostActivity) getActivity());
-          dialog = LotteryDialog(This);
-          break;
+      case LOTTERY:
+        PostActivity This = ((PostActivity) getActivity());
+        dialog = LotteryDialog(This);
+        break;
       }
       return dialog;
     }
@@ -224,7 +230,8 @@ public class PostActivity extends ActionBarActivity {
       //OKボタン押下後の処理を記述
       dlgBuilder.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
         @Override
-        public void onClick(DialogInterface dialog, int which) { }
+        public void onClick(DialogInterface dialog, int which) {
+        }
       });
 
       final Dialog dlg = dlgBuilder.create();

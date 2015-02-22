@@ -13,7 +13,7 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
 
-import com.example.oigami.twimpt.twimpt.TwimptRoom;
+import com.example.oigami.twimpt.twimpt.room.TwimptRoom;
 
 /**
  * Created by oigami on 2014/10/02
@@ -57,33 +57,29 @@ public class RoomListActivity extends ActionBarActivity {
     listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
       @Override
       public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        ListView listView = (ListView) parent;
-        // クリックされたアイテムを取得します
-        String item = (String) listView.getItemAtPosition(position);
         //Toast.makeText(RoomListActivity.this, item, Toast.LENGTH_LONG).show();
         String[] hash = {"public", "monologue"};
         String roomHash;
+        Intent intent;
         switch (position) {
-          case 0:
-          case 1: {
-            roomHash = hash[position];
-            Intent intent = new Intent(RoomListActivity.this, RoomActivity.class);
-            intent.putExtra(RoomActivity.INTENT_ROOM_NAME_HASH, roomHash);
-            //intent.putExtra("keyword", globals.twimptRooms.get(now_room));
-            startActivity(intent);
-            return;
-          }
-          case 2:
-          case 3:
-          case 4:
-            Intent intent = new Intent(RoomListActivity.this, RecentRoomActivity.class);
-            intent.putExtra(RecentRoomActivity.INTENT_ROOM_RECENT_NAME, members[position]);
-            //intent.putExtra("keyword", globals.twimptRooms.get(now_room));
-            startActivity(intent);
-            return;
-          default:
-            //TODO
-            Toast.makeText(RoomListActivity.this, "未実装", Toast.LENGTH_LONG).show();
+        case 0:
+        case 1:
+          roomHash = hash[position];
+          intent = new Intent(RoomListActivity.this, RoomActivity.class);
+          intent.putExtra(RoomActivity.INTENT_ROOM_NAME_HASH, roomHash);
+          //intent.putExtra("keyword", globals.twimptRooms.get(now_room));
+          startActivity(intent);
+          return;
+        case 2:
+        case 3:
+        case 4:
+          intent = new Intent(RoomListActivity.this, RecentRoomActivity.class);
+          intent.putExtra(RecentRoomActivity.INTENT_ROOM_RECENT_NAME, members[position]);
+          //intent.putExtra("keyword", globals.twimptRooms.get(now_room));
+          startActivity(intent);
+          return;
+        default:
+          Toast.makeText(RoomListActivity.this, "未実装", Toast.LENGTH_LONG).show();
         }
       }
     });
@@ -99,7 +95,8 @@ public class RoomListActivity extends ActionBarActivity {
       }
 
       @Override
-      public void onNothingSelected(AdapterView<?> parent) {}
+      public void onNothingSelected(AdapterView<?> parent) {
+      }
 
     });
   }
@@ -121,31 +118,31 @@ public class RoomListActivity extends ActionBarActivity {
     SharedPreferences sharedPref;
     String accessToken, accessTokenSecret;
     switch (id) {
-      case R.id.action_auth:
-        sharedPref = getSharedPreferences("token", MODE_PRIVATE);
-        accessToken = sharedPref.getString("access_token", "");
-        accessTokenSecret = sharedPref.getString("access_token_secret", "");
-        if (accessToken.equals("") || accessTokenSecret.equals("")) {
-          Intent intent = new Intent(RoomListActivity.this, TwimptAuthActivity.class);
-          startActivity(intent);
-        } else {
-          Toast.makeText(this, "すでに認証しています", Toast.LENGTH_LONG).show();
-        }
-        break;
-      case R.id.action_deauthentication: {
-        sharedPref = getSharedPreferences("token", MODE_PRIVATE);
-        accessToken = sharedPref.getString("access_token", "");
-        accessTokenSecret = sharedPref.getString("access_token_secret", "");
-        if (accessToken.equals("") || accessTokenSecret.equals("")) {
-          Toast.makeText(this, "認証されていません", Toast.LENGTH_LONG).show();
-        } else {
-          SharedPreferences.Editor e = sharedPref.edit();
-          e.clear();
-          e.commit();
-          Toast.makeText(this, "認証を解除しました", Toast.LENGTH_LONG).show();
-        }
-        break;
+    case R.id.action_auth:
+      sharedPref = getSharedPreferences("token", MODE_PRIVATE);
+      accessToken = sharedPref.getString("access_token", "");
+      accessTokenSecret = sharedPref.getString("access_token_secret", "");
+      if (accessToken.equals("") || accessTokenSecret.equals("")) {
+        Intent intent = new Intent(RoomListActivity.this, TwimptAuthActivity.class);
+        startActivity(intent);
+      } else {
+        Toast.makeText(this, "すでに認証しています", Toast.LENGTH_LONG).show();
       }
+      break;
+    case R.id.action_deauthentication: {
+      sharedPref = getSharedPreferences("token", MODE_PRIVATE);
+      accessToken = sharedPref.getString("access_token", "");
+      accessTokenSecret = sharedPref.getString("access_token_secret", "");
+      if (accessToken.equals("") || accessTokenSecret.equals("")) {
+        Toast.makeText(this, "認証されていません", Toast.LENGTH_LONG).show();
+      } else {
+        SharedPreferences.Editor e = sharedPref.edit();
+        e.clear();
+        e.commit();
+        Toast.makeText(this, "認証を解除しました", Toast.LENGTH_LONG).show();
+      }
+      break;
+    }
     }
     return super.onOptionsItemSelected(item);
   }

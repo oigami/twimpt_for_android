@@ -9,7 +9,6 @@ import android.graphics.drawable.Drawable;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
-import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,17 +22,15 @@ import com.example.oigami.twimpt.twimpt.TwimptLogData;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * グリッドビューのアダプタ
  * アダプターは、画像ダウンロード中の文字列表示と画像の表示を行う
  */
 public class TwimptImageAdapter extends BaseAdapter {
-  Map<String, String> mDownloadingTextImageMap = new HashMap<String, String>();
+  HashMap<String, String> mDownloadingTextImageMap = new HashMap<String, String>();
   /** ダウンロード中のurl */
-  private List<String> isDownloading = new ArrayList<String>();
+  private ArrayList<String> isDownloading = new ArrayList<String>();
   private Drawable[] mDrawableMap;
   TwimptLogData mTwimptLogData;
   private Context mContext;

@@ -32,4 +32,6 @@
     <string name="insert_lottery_command">くじ引きコマンドの挿入</string>
     <string name="insert">挿入</string>
     <string name="censored">禁則事項です</string>
+    <string name="open_user_room">ユーザールームを開く</string>
+    <string name="open_id_room">IDでルームを開く</string>
 </resources>

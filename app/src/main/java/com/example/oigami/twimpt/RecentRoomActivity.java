@@ -29,7 +29,7 @@ import java.util.ArrayList;
  * Created by oigami on 2014/10/03
  */
 public class RecentRoomActivity extends ActionBarActivity {
-  static public String INTENT_ROOM_RECENT_NAME = "RECENT_ROOM_NAME";
+  public static final String INTENT_ROOM_RECENT_NAME = "RECENT_ROOM_NAME";
   DataApplication globals;
   int mNowPage = 1;
   String mRecentUrl;

@@ -1,4 +1,6 @@
-package com.example.oigami.twimpt.twimpt;
+package com.example.oigami.twimpt.twimpt.room;
+
+import com.example.oigami.twimpt.twimpt.TwimptLogData;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -6,13 +8,6 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 
 public class TwimptRoom {
-  public TwimptRoom(){}
-  public TwimptRoom(JSONObject roomData) throws JSONException {
-    hash = roomData.getString("hash");
-    name = roomData.getString("name");
-    id = roomData.getString("id");
-    type = "room";
-  }
   /** ルームの名前 */
   public String name;
   /** ルームのタイプ */
@@ -24,6 +19,24 @@ public class TwimptRoom {
   /** 投稿内容に変更があった時のためのハッシュ値 */
   public String LatestModifyHash;
   public ArrayList<TwimptLogData> dataList = new ArrayList<TwimptLogData>();
+
+
+  public TwimptRoom() {
+  }
+
+  public TwimptRoom(JSONObject roomData) throws JSONException {
+    hash = roomData.getString("hash");
+    name = roomData.getString("name");
+    id = roomData.getString("id");
+    type = "room";
+  }
+
+  public TwimptRoom(String hash, JSONObject roomData) throws JSONException {
+    this.hash = hash;
+    name = roomData.getString("name");
+    id = roomData.getString("id");
+    type = "room";
+  }
 
   /**
    * 最も最新のハッシュ値を返す

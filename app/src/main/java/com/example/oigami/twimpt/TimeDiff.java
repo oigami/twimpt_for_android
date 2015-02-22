@@ -8,7 +8,7 @@ import java.util.Calendar;
 public class TimeDiff {
 
   //現在の日時と比較して、時間の差分を求めるメソッド
-  static public String toDiffDate(long timeInMillis) {
+  public static String toDiffDate(long timeInMillis) {
     //比較対象日時
     //long型の差分（ミリ秒）
     long diffTime = System.currentTimeMillis() - timeInMillis;

@@ -46,7 +46,7 @@
                 <data android:pathPrefix="/public"/>
                 <data android:pathPrefix="/monologue"/>
                 <data android:pathPrefix="/user/"/>
-                <data android:pathPrefix="/log/"/>
+                <!--<data android:pathPrefix="/log/"/>-->
                 <data android:pathPrefix="/room/"/>
             </intent-filter>
         </activity>

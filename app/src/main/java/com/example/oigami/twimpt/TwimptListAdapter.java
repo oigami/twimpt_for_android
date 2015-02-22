@@ -11,7 +11,9 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.text.Html;
+import android.text.Layout;
 import android.text.Spannable;
+import android.text.style.ClickableSpan;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -24,15 +26,11 @@ import android.widget.TextView;
 
 import com.example.oigami.twimpt.image.FileDownloadThread;
 import com.example.oigami.twimpt.image.FileDownloader;
-import com.example.oigami.twimpt.textLink.MutableLinkMovementMethod;
 import com.example.oigami.twimpt.twimpt.TwimptLogData;
-import com.example.oigami.twimpt.twimpt.TwimptRoom;
+import com.example.oigami.twimpt.twimpt.room.TwimptRoom;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -46,8 +44,6 @@ public class TwimptListAdapter extends BaseAdapter {
   private Context mContext;
   /** 現在表示しているルーム */
   private TwimptRoom mNowRoom;
-  /** ルーム一覧 */
-  private Map<String, TwimptRoom> mTwimptRooms;
   private Handler mHandler;
   private int mReadHere;
   TwimptImageAdapter.DrawableListener mIconListener;
@@ -59,11 +55,10 @@ public class TwimptListAdapter extends BaseAdapter {
   }
 
   public void reset(Context context,
-                    Map<String, TwimptRoom> twimptRooms, TwimptRoom nowRoom,
+                    TwimptRoom nowRoom,
                     TwimptImageAdapter.DrawableListener iconListener,
                     TwimptImageAdapter.DrawableListener imageListener) {
     mContext = context;
-    mTwimptRooms = twimptRooms;
     mNowRoom = nowRoom;
     mIconListener = iconListener;
     mImageListener = imageListener;
@@ -72,7 +67,7 @@ public class TwimptListAdapter extends BaseAdapter {
   }
 
   public TwimptListAdapter(Context context,
-                           Map<String, TwimptRoom> twimptRooms, TwimptRoom nowRoom,
+                           TwimptRoom nowRoom,
                            TwimptImageAdapter.DrawableListener iconListener,
                            TwimptImageAdapter.DrawableListener imageListener) {
     mImageAdapters = new HashMap<Integer, TwimptImageAdapter>();
@@ -83,7 +78,7 @@ public class TwimptListAdapter extends BaseAdapter {
         notifyDataSetChanged();
       }
     };
-    reset(context, twimptRooms, nowRoom, iconListener, imageListener);
+    reset(context, nowRoom, iconListener, imageListener);
 
   }
 
@@ -142,28 +137,39 @@ public class TwimptListAdapter extends BaseAdapter {
         v = inflater.inflate(R.layout.list_view, null);
         holder = new ViewHolder();
         holder.text = (TextView) v.findViewById(R.id.text);
-        //holder.text.setCompoundDrawablesRelative();
-        // TextView に LinkMovementMethod を登録します
-        //holder.text.setMovementMethod(movement_method);
-        //http://www.globefish.jp/mt/2011/09/listview-textview-setmovementmethod.html
-        //setMovementMethodの後にフォーカスをfalseにしないとlistviewのクリックに持ってかれる
-        holder.text.setFocusable(false);
-        holder.text.setOnTouchListener(new ViewGroup.OnTouchListener() {
+        holder.text.setOnTouchListener(new View.OnTouchListener() {
           @Override
-          public boolean onTouch(View view, MotionEvent event) {
-            TextView textView = (TextView) view;
-            //継承したLinkMovementMethod
-            MutableLinkMovementMethod m = new MutableLinkMovementMethod();
-            //MovementMethod m=LinkMovementMethod.getInstance();
-            //リンクのチェックを行うため一時的にsetする
-            textView.setMovementMethod(m);
-            boolean mt = m.onTouchEvent(textView, (Spannable) textView.getText(), event);
-            //チェックが終わったので解除する しないと親view(listview)に行けない
-            textView.setMovementMethod(null);
-            //setMovementMethodを呼ぶとフォーカスがtrueになるのでfalseにする
-            textView.setFocusable(false);
-            //戻り値がtrueの場合は今のviewで処理、falseの場合は親viewで処理
-            return mt;
+          public boolean onTouch(View v, MotionEvent event) {
+            CharSequence text = ((TextView) v).getText();
+            Spannable spannable = Spannable.Factory.getInstance().newSpannable(text);
+            TextView widget = (TextView) v;
+            int action = event.getAction();
+
+            if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_DOWN) {
+              int x = (int) event.getX();
+              int y = (int) event.getY();
+
+              x -= widget.getTotalPaddingLeft();
+              y -= widget.getTotalPaddingTop();
+
+              x += widget.getScrollX();
+              y += widget.getScrollY();
+
+              Layout layout = widget.getLayout();
+              int line = layout.getLineForVertical(y);
+              int off = layout.getOffsetForHorizontal(line, x);
+
+              if (x < layout.getLineMax(line)) {
+                ClickableSpan[] link = spannable.getSpans(off, off, ClickableSpan.class);
+                if (link.length != 0) {
+                  if (action == MotionEvent.ACTION_UP) {
+                    link[0].onClick(widget);
+                  }
+                  return true;
+                }
+              }
+            }
+            return false;
           }
         });
         holder.name = (TextView) v.findViewById(R.id.name);
@@ -196,7 +202,9 @@ public class TwimptListAdapter extends BaseAdapter {
       holder.text.setText(twimptLogData.decodedText);
       holder.text.setFocusable(false);
       holder.text.setClickable(false);
-      holder.name.setText(twimptLogData.name);
+
+      holder.name.setText(twimptLogData.user.name);
+
       // ミリ秒で比較するので1000倍する
       String timeString = TimeDiff.toDiffDate(twimptLogData.time * 1000) + "前";
       holder.time.setText(timeString);

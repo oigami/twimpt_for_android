@@ -1,8 +1,10 @@
 package com.example.oigami.twimpt.twimpt;
 
 
+import com.example.oigami.twimpt.BuildConfig;
 import com.example.oigami.twimpt.debug.Logger;
 
+import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -17,6 +19,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,6 +31,7 @@ public class TwimptNetwork {
   private static final String TWIMPT_API_URL = "http://api.twimpt.com/";
 
   private static JSONObject Request(HttpRequestBase request) throws IOException, JSONException {
+
     DefaultHttpClient client = new DefaultHttpClient();
     final HttpResponse response = client.execute(request);
     // レスポンスヘッダーの取得(ファイルが無かった場合などは404)
@@ -50,6 +54,16 @@ public class TwimptNetwork {
     // 送信パラメータのエンコードを指定
     if (postParam != null)
       request.setEntity(new UrlEncodedFormEntity(postParam, "UTF-8"));
+    if (BuildConfig.DEBUG) {
+      StringWriter sw=new StringWriter();
+      for (NameValuePair pair:postParam){
+        sw.append(pair.getName());
+        sw.append(':');
+        sw.append(pair.getValue());
+        sw.append('\n');
+      }
+      Logger.log(sw.toString());
+    }
     return Request(request);
   }
 
@@ -210,7 +224,21 @@ public class TwimptNetwork {
    * @throws JSONException
    */
   public static JSONObject UpdateRequest(String type, String id) throws IOException, JSONException {
-    return Request(new HttpGet(TWIMPT_API_URL + type + '/' + id));
+    String url = TWIMPT_API_URL + type + '/' + id;
+    return Request(new HttpGet(url));
+  }
+
+  /**
+   * wevのurlパスを使って最新ログを取得するときのみ使う
+   * 一度呼んだ後は戻ってきたjsonの中のhashを使って最新ログを取得する
+   * @param path "room/vip3" or "user/nelie" or "public" or "monologue" etc...
+   * @return jsonデータ
+   * @throws IOException
+   * @throws JSONException
+   */
+  public static JSONObject UpdateRequest(String path) throws IOException, JSONException {
+    String url = TWIMPT_API_URL + path;
+    return Request(new HttpGet(url));
   }
 
   /**

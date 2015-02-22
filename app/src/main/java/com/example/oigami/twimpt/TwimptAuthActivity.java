@@ -40,12 +40,11 @@ public class TwimptAuthActivity extends Activity {
       public void onClick(View v) {
         AuthRequest();
         v.setEnabled(false);
-        return;
         // クリック時の処理
-//        RequestTokenData requestToken = TwimptToken.GetRequestToken(TwimptAuthActivity.this);
-//        Uri uri = Uri.parse(Twimpt.GetAuthURL(AUTH_ID, requestToken.token, requestToken.secret));
-//        Intent i = new Intent(Intent.ACTION_VIEW, uri);
-//        startActivity(i);
+        //        RequestTokenData requestToken = TwimptToken.GetRequestToken(TwimptAuthActivity.this);
+        //        Uri uri = Uri.parse(Twimpt.GetAuthURL(AUTH_ID, requestToken.token, requestToken.secret));
+        //        Intent i = new Intent(Intent.ACTION_VIEW, uri);
+        //        startActivity(i);
 
       }
     });
@@ -61,67 +60,65 @@ public class TwimptAuthActivity extends Activity {
   }
 
   public void AuthRequest() {
-    if (mNowUpdate == false) {
-      mNowUpdate = true;
-      new Thread(new Runnable() {
-        @Override
-        public void run() {
-          try {
-            final JSONObject json = TwimptNetwork.GetRequestToken(TwimptDeveloperData.API_KEY, TwimptDeveloperData.API_KEY_SECRET);
-            Logger.log(json.toString(2));
-            final RequestTokenData requestTokenData = new RequestTokenData(json);
-            mHandler.post(new Runnable() {
-              @Override
-              public void run() {
-                button.setEnabled(true);
-                TwimptToken.SetRequestToken(TwimptAuthActivity.this, requestTokenData);
-                GoAuthWebPage(requestTokenData);
-              }
-            });
-          } catch (final Exception e) {
-            e.printStackTrace();
-            mHandler.post(new Runnable() {
-              @Override
-              public void run() {
-                Toast.makeText(TwimptAuthActivity.this, e.getMessage() + "\n\n" + Logger.getStackTraceString(e), Toast.LENGTH_LONG).show();
-              }
-            });
-          }
-          mNowUpdate = false;
+    if (mNowUpdate) return;
+    mNowUpdate = true;
+    new Thread(new Runnable() {
+      @Override
+      public void run() {
+        try {
+          final JSONObject json = TwimptNetwork.GetRequestToken(TwimptDeveloperData.API_KEY, TwimptDeveloperData.API_KEY_SECRET);
+          Logger.log(json.toString(2));
+          final RequestTokenData requestTokenData = new RequestTokenData(json);
+          mHandler.post(new Runnable() {
+            @Override
+            public void run() {
+              button.setEnabled(true);
+              TwimptToken.SetRequestToken(TwimptAuthActivity.this, requestTokenData);
+              GoAuthWebPage(requestTokenData);
+            }
+          });
+        } catch (final Exception e) {
+          e.printStackTrace();
+          mHandler.post(new Runnable() {
+            @Override
+            public void run() {
+              Toast.makeText(TwimptAuthActivity.this, e.getMessage() + "\n\n" + Logger.getStackTraceString(e), Toast.LENGTH_LONG).show();
+            }
+          });
         }
-      }).start();
-    }
+        mNowUpdate = false;
+      }
+    }).start();
   }
 
   private void CheckAuth() {
-    if (mNowUpdate == false) {
-      mNowUpdate = true;
-      new Thread(new Runnable() {
-        @Override
-        public void run() {
-          RequestTokenData requestToken = TwimptToken.GetRequestToken(TwimptAuthActivity.this);
-          try {
-            final JSONObject json = TwimptNetwork.GetAccessToken(TwimptDeveloperData.API_KEY, TwimptDeveloperData.API_KEY_SECRET, requestToken.token, requestToken.secret);
-            final AccessTokenData accessTokenData = new AccessTokenData(json);
-            mHandler.post(new Runnable() {
-              @Override
-              public void run() {
-                TwimptToken.SetAccessToken(TwimptAuthActivity.this, accessTokenData);
-                StartRoomActivity();
-              }
-            });
-          } catch (final Exception e) {
-            e.printStackTrace();
-            mHandler.post(new Runnable() {
-              @Override
-              public void run() {
-                Toast.makeText(TwimptAuthActivity.this, e.getMessage() + "\n\n" + e.getStackTrace(), Toast.LENGTH_LONG).show();
-              }
-            });
-          }
+    if (mNowUpdate) return;
+    mNowUpdate = true;
+    new Thread(new Runnable() {
+      @Override
+      public void run() {
+        RequestTokenData requestToken = TwimptToken.GetRequestToken(TwimptAuthActivity.this);
+        try {
+          final JSONObject json = TwimptNetwork.GetAccessToken(TwimptDeveloperData.API_KEY, TwimptDeveloperData.API_KEY_SECRET, requestToken.token, requestToken.secret);
+          final AccessTokenData accessTokenData = new AccessTokenData(json);
+          mHandler.post(new Runnable() {
+            @Override
+            public void run() {
+              TwimptToken.SetAccessToken(TwimptAuthActivity.this, accessTokenData);
+              StartRoomActivity();
+            }
+          });
+        } catch (final Exception e) {
+          e.printStackTrace();
+          mHandler.post(new Runnable() {
+            @Override
+            public void run() {
+              Toast.makeText(TwimptAuthActivity.this, e.getMessage() + "\n\n" + e.getStackTrace(), Toast.LENGTH_LONG).show();
+            }
+          });
         }
-      }).start();
-    }
+      }
+    }).start();
   }
 
   private void GoAuthWebPage(RequestTokenData requestTokenData) {

@@ -37,9 +37,6 @@ private Bitmap LoadToJustDisplayBitmap(byte[] bitmapByte){
   size.y = display.heightPixels;
   Bitmap bitmap = loadSavedSizeBitmap(Math.max(size.x, size.y), bitmapByte);
   bitmapByte = null;
-  if (bitmap == null) {
-    //Toast.makeText(this, "画像形式が不正です", Toast.LENGTH_LONG).show();
-  }
   return bitmap;
 }
   public static Bitmap loadSavedSizeBitmap(int maxSize, byte[] data) {

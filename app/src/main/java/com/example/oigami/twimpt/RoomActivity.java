@@ -7,7 +7,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
-import android.database.Cursor;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
@@ -33,32 +32,33 @@ import com.example.oigami.twimpt.debug.Logger;
 import com.example.oigami.twimpt.image.FileDownloadThread;
 import com.example.oigami.twimpt.image.FileDownloader;
 import com.example.oigami.twimpt.image.ImageCacheDB;
-import com.example.oigami.twimpt.twimpt.TwimptJson;
 import com.example.oigami.twimpt.twimpt.TwimptLogData;
 import com.example.oigami.twimpt.twimpt.TwimptNetwork;
-import com.example.oigami.twimpt.twimpt.TwimptRoom;
+import com.example.oigami.twimpt.twimpt.room.TwimptRoom;
 import com.example.oigami.twimpt.twimpt.token.AccessTokenData;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class RoomActivity extends ActionBarActivity {
-  public enum CONTEXT_MENU {
+  private enum CONTEXT_MENU {
     CANCEL,
     COMMENT,
     OPEN_ROOM,
+    OPEN_USER_ROOM,
+    OPEN_ID_ROOM,
     WRITE_ROOM,
   }
 
@@ -77,39 +77,37 @@ public class RoomActivity extends ActionBarActivity {
 
   private TwimptListAdapter adapter;
   private Button listEndButton;
-  ImageCacheDB userImageDB;
-  ImageCacheDB uploadImageDB;
+  private ImageCacheDB userImageDB;
+  private ImageCacheDB uploadImageDB;
   /** コア数 */
   private static final int NUMBER_OF_CORES = Runtime.getRuntime().availableProcessors();
-  ExecutorService exec;
-  /** ここまで読んだタグの位置 */
-  private int readHere = 0;
+  private ExecutorService exec;
+
   private DrawableListener mIconListener, mImageListener;
 
   //private String accessToken, accessTokenSecret;
-  enum WhatHandler {
-    ERROR,
-    SUCCESS,
+  private static final class WhatHandler {
+    static final int SUCCESS = 0;
+    static final int ERROR = 1;
   }
 
-  Handler mHandler = new Handler() {
+
+  private Handler mHandler = new Handler() {
     @Override
     public void handleMessage(Message message) {
-      WhatHandler whats[] = WhatHandler.values();
-      WhatHandler what = whats[message.what];
-      switch (what) {
-        case ERROR:
-          Toast.makeText(RoomActivity.this, (String) message.obj, Toast.LENGTH_LONG).show();
-          break;
-        case SUCCESS:
-          break;
+      switch (message.what) {
+      case WhatHandler.ERROR:
+        Toast.makeText(RoomActivity.this, (String) message.obj, Toast.LENGTH_LONG).show();
+        break;
+      case WhatHandler.SUCCESS:
+        break;
       }
       RefreshEnd();
     }
   };
 
   private void ShowErrorMessage(String errMsg) {
-    Message msg = Message.obtain(mHandler, WhatHandler.ERROR.ordinal(), errMsg);
+    Message msg = Message.obtain(mHandler, WhatHandler.ERROR, errMsg);
     mHandler.sendMessage(msg);
   }
 
@@ -143,27 +141,30 @@ public class RoomActivity extends ActionBarActivity {
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_my);
-    exec = Executors.newFixedThreadPool(NUMBER_OF_CORES >= 1 ? NUMBER_OF_CORES + 1 : 2);
+    exec = Executors.newFixedThreadPool(NUMBER_OF_CORES >= 1 ? NUMBER_OF_CORES : 1);
     //deleteDatabase();
     VersionCheck();
     userImageDB = new ImageCacheDB(RoomActivity.this, "imagecache.db");
     uploadImageDB = new ImageCacheDB(RoomActivity.this, "PostedImage.db");
-//    deleteDatabase(uploadImageDB.getDbFileName());
-//    uploadImageDB = new ImageCacheDB(RoomActivity.this, "PostedImage.db");
+    //    deleteDatabase(uploadImageDB.getDbFileName());
+    //    uploadImageDB = new ImageCacheDB(RoomActivity.this, "PostedImage.db");
 
     mGlobals = (DataApplication) this.getApplication();
     // ボタンがクリックされた時に呼び出されるコールバックリスナーを登録します
 
-    Intent i = getIntent();
-    mNowHash = i.getStringExtra(INTENT_ROOM_NAME_HASH);
-    if (mNowHash == null) mNowHash = "public";
-    TwimptRoom nowRoom = mGlobals.twimptRooms.get(mNowHash);
-    getSupportActionBar().setTitle(nowRoom.name);
-    mIconListener = new DrawableListener(RoomActivity.this, userImageDB, exec);
-    mImageListener = new DrawableListener(RoomActivity.this, uploadImageDB, exec);
-    adapter = new TwimptListAdapter(RoomActivity.this, mGlobals.twimptRooms, nowRoom,
-            mIconListener, mImageListener);
     mSwipeRefreshWidget = (SwipeRefreshLayout) findViewById(R.id.swipe_refresh_widget);
+    mSwipeRefreshWidget.setColorSchemeResources(
+            R.color.blue_bright,
+            R.color.green_light,
+            R.color.orange_light,
+            R.color.red_light);
+    mSwipeRefreshWidget.setOnRefreshListener(new OnRefreshListener() {
+      @Override
+      public void onRefresh() {
+        UpdateRequest();
+      }
+    });
+
     mListView = (ListView) findViewById(R.id.content);
     listEndButton = new Button(this);
     listEndButton.setText(R.string.load_log);
@@ -181,7 +182,35 @@ public class RoomActivity extends ActionBarActivity {
         openContextMenu(view);
       }
     });
-    mListView.setAdapter(adapter);
+    mIconListener = new DrawableListener(RoomActivity.this, userImageDB, exec);
+    mImageListener = new DrawableListener(RoomActivity.this, uploadImageDB, exec);
+
+    Intent intent = getIntent();
+    mNowHash = intent.getStringExtra(INTENT_ROOM_NAME_HASH);
+    if (mNowHash == null) mNowHash = "public";
+
+    String action = intent.getAction();
+    if (!Intent.ACTION_VIEW.equals(action)) {
+      TwimptRoom nowRoom = mGlobals.twimptRooms.get(mNowHash);
+      getSupportActionBar().setTitle(nowRoom.name);
+      createListAdapter(nowRoom);
+      mListView.setAdapter(adapter);
+      UpdateRequest();
+      Logger.log("update");
+    }
+    //mSwipeRefreshWidget.setRefreshing(true);
+
+
+    registerForContextMenu(mListView);
+  }
+
+  private void createListAdapter(TwimptRoom nowRoom) {
+    if (adapter != null) {
+      adapter.reset(this, nowRoom, mIconListener, mImageListener);
+      return;
+    }
+    adapter = new TwimptListAdapter(RoomActivity.this, nowRoom,
+                                    mIconListener, mImageListener);
     adapter.setOnImageItemClickListener(new AdapterView.OnItemClickListener() {
       public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         TwimptImageAdapter imageAdapter = (TwimptImageAdapter) parent.getAdapter();
@@ -193,29 +222,22 @@ public class RoomActivity extends ActionBarActivity {
         startActivity(intent);
       }
     });
-    mSwipeRefreshWidget.setColorSchemeResources(
-            R.color.blue_bright, R.color.green_light, R.color.orange_light, R.color.red_light);
-    // 1. スワイプ時のリスナを登録する（implements OnRefreshListener）
-    mSwipeRefreshWidget.setOnRefreshListener(new OnRefreshListener() {
-      @Override
-      public void onRefresh() {
-        UpdateRequest();
-      }
-    });
-    //mSwipeRefreshWidget.setRefreshing(true);
-
-    UpdateRequest();
-
-    registerForContextMenu(mListView);
+    mListView.setAdapter(adapter);
   }
 
+  private void ChangeRoom(String newHash) {
+    if (mNowHash.equals(newHash)) return;
+    TwimptRoom newRoom = mGlobals.twimptRooms.get(newHash);
+    createListAdapter(newRoom);
+    getSupportActionBar().setTitle(newRoom.name);
+    mNowHash = newHash;
+  }
 
   @Override
   public void onStart() {
     super.onStart();
     //TextView textView = (TextView) findViewById(R.id.textview);
     //textView.setText(mGlobals.twimptRooms.get(mNowHash).name);
-    adapter.notifyDataSetChanged();
   }
 
   @Override
@@ -225,6 +247,8 @@ public class RoomActivity extends ActionBarActivity {
     String action = intent.getAction();
     if (!Intent.ACTION_VIEW.equals(action))
       return;
+    //2回目は来ないようにする
+    intent.setAction(Intent.ACTION_MAIN);
     Uri uri = intent.getData();
     if (uri == null)
       return;
@@ -234,45 +258,115 @@ public class RoomActivity extends ActionBarActivity {
     if (path.equals("public") || path.equals("monologue")) {
       mNowHash = path;
       Map<String, TwimptRoom> twimptRoomMap = mGlobals.twimptRooms;
-      adapter.reset(this, twimptRoomMap, twimptRoomMap.get(mNowHash), mIconListener, mImageListener);
+      adapter.reset(this, twimptRoomMap.get(mNowHash), mIconListener, mImageListener);
       adapter.notifyDataSetChanged();
       return;
     }
-    String regex = "(room|user|log)/(.*?)";
-    Pattern p = Pattern.compile(regex);
-    Matcher m = p.matcher(path);
-    if (m.find()) {
-      final String type = m.group(1);
-      final String id = m.group(2);
-      /** 最新ログの取得スレッドを実行 */
-      if (!CanRequest()) return;
-      exec.execute(new Runnable() {
-        @Override
-        public void run() {
-          try {
-            final Map<String, TwimptRoom> twimptRooms = mGlobals.twimptRooms;
-            final TwimptRoom twimptRoom = twimptRooms.get(mNowHash);
-            final JSONObject json = TwimptNetwork.UpdateRequest(type, id);
-            final TwimptJson.ParsedData parsedData = TwimptJson.UpdateParse(json);
-            mHandler.post(new Runnable() {
-              @Override
-              public void run() {
-                readHere = parsedData.mTwimptLogData.length;
-                PushData(RoomActivity.this, twimptRooms, twimptRoom, parsedData, true);
-                RefreshEnd();
-                //リストビューのスクロール位置をずらす
-                if (readHere > 0 && twimptRoom.dataList.size() > 20)
-                  mListView.setSelectionFromTop(readHere - 1, 10);
-              }
-            });
-          } catch (Exception e) {
-            e.printStackTrace();
-            ShowErrorMessage(e.getMessage());
-          }
-        }
-      });
+
+    final int UNKNOWN = -1;
+    final int ROOM = 0;
+    final int USER = 1;
+    final int LOG = 2;
+    int type;
+    String id;
+    if (path.startsWith("room/")) {
+      type = ROOM;
+      id = path.substring(5);
+    } else if (path.startsWith("user/")) {
+      type = USER;
+      id = path.substring(5);
+    } else if (path.startsWith("log/")) {
+      type = LOG;
+      id = path.substring(4);
+    } else {
+      return;
     }
-    assert false;
+
+    Collection<TwimptRoom> twimptRooms = mGlobals.twimptRooms.values();
+    for (TwimptRoom twimptRoom : twimptRooms) {
+      if (id.equals(twimptRoom.id)) {
+        ChangeRoom(twimptRoom.hash);
+        UpdateRequest();
+        return;
+      }
+    }
+    /** 最新ログの取得スレッドを実行 */
+    switch (type) {
+    case ROOM:
+      UpdateRequest(path, UpdateRoomRequestListener());
+      return;
+    case USER:
+      UpdateRequest(path, UpdateUserRequestListener());
+      return;
+    case LOG:
+    default:
+      Logger.log(path);
+      ShowErrorMessage(path + "error");
+    }
+  }
+
+  interface RequestListener {
+    public Runnable OnRequest(String path) throws IOException, JSONException;
+  }
+
+  private Runnable UpdateRunnable(final TwimptRoom nowRoom, final ParsedData parsedData,
+                                  final ConcurrentHashMap<String, TwimptRoom> twimptRooms) {
+    return new Runnable() {
+      @Override
+      public void run() {
+        final int readHere = parsedData.mTwimptLogData.length;
+        PushUpdateData(twimptRooms, nowRoom, parsedData);
+        ChangeRoom(nowRoom.hash);
+        RefreshEnd();
+        adapter.SetReadHerePosition(readHere);
+        //リストビューのスクロール位置をずらす
+        if (0 < readHere && 20 < adapter.getCount())
+          mListView.setSelectionFromTop(readHere - 1, 10);
+      }
+    };
+  }
+
+  private RequestListener UpdateRoomRequestListener() {
+    return new RequestListener() {
+      @Override
+      public Runnable OnRequest(String path) throws IOException, JSONException {
+        ConcurrentHashMap<String, TwimptRoom> twimptRooms = mGlobals.twimptRooms;
+        JSONObject json = TwimptNetwork.UpdateRequest(path);
+        ParsedRoomData parsedData = new ParsedRoomData(json, twimptRooms);
+        return UpdateRunnable(parsedData.nowTwimptRoom, parsedData, twimptRooms);
+      }
+    };
+  }
+
+  private RequestListener UpdateUserRequestListener() {
+    return new RequestListener() {
+      @Override
+      public Runnable OnRequest(String path) throws IOException, JSONException {
+        ConcurrentHashMap<String, TwimptRoom> twimptRooms = mGlobals.twimptRooms;
+        JSONObject json = TwimptNetwork.UpdateRequest(path);
+        ParsedUserData parsedData = new ParsedUserData(json, twimptRooms);
+        return UpdateRunnable(parsedData.nowUserRoomData, parsedData, twimptRooms);
+      }
+    };
+  }
+
+  private void UpdateRequestRun(String path, RequestListener listener) {
+    try {
+      mHandler.post(listener.OnRequest(path));
+    } catch (Exception e) {
+      e.printStackTrace();
+      ShowErrorMessage(e.getMessage());
+    }
+  }
+
+  private void UpdateRequest(final String path, final RequestListener listener) {
+    if (!CanRequest()) return;
+    exec.execute(new Runnable() {
+      @Override
+      public void run() {
+        UpdateRequestRun(path, listener);
+      }
+    });
   }
 
   @Override
@@ -281,15 +375,18 @@ public class RoomActivity extends ActionBarActivity {
     AdapterContextMenuInfo adapterInfo = (AdapterContextMenuInfo) menuInfo;
     ListView listView = (ListView) v;
     //「選んだものが「ここまで読んだ」タグの場合は何もしない
-    if (adapterInfo.position == readHere) return;
+    if (adapterInfo.position == adapter.GetReadHerePosition()) return;
     TwimptLogData twimptLogData = (TwimptLogData) listView.getItemAtPosition(adapterInfo.position);
     //TwimptLogData twimptLogData = mGlobals.twimptRooms.get(mGlobals.mNowHash).dataList.get(mListViewClickedNum);
     menu.setHeaderTitle(twimptLogData.text);
-    //TODO 現状APIがないのでコメントアウト
     //menu.add(0, CONTEXT_MENU.COMMENT.ordinal(), 0, "書き込みにコメントする");
     //String roomName = twimptLogData.roomHash != null ? mGlobals.twimptRooms.get(twimptLogData.roomHash).name : "ひとりごと";
     if (mNowHash.equals("public"))
       menu.add(0, CONTEXT_MENU.OPEN_ROOM.ordinal(), 0, R.string.open_room);
+    String userHash = twimptLogData.user.hash;
+    if (twimptLogData.user.hash != null && userHash.length() != 0)
+      menu.add(0, CONTEXT_MENU.OPEN_USER_ROOM.ordinal(), 0, R.string.open_user_room);
+    menu.add(0, CONTEXT_MENU.OPEN_ID_ROOM.ordinal(), 0, R.string.open_id_room);
     menu.add(0, CONTEXT_MENU.WRITE_ROOM.ordinal(), 0, R.string.write_room);
     menu.add(0, CONTEXT_MENU.CANCEL.ordinal(), 0, R.string.cancel);
     super.onCreateContextMenu(menu, v, menuInfo);
@@ -304,56 +401,78 @@ public class RoomActivity extends ActionBarActivity {
     TwimptLogData twimptLogData = (TwimptLogData) mListView.getItemAtPosition(info.position);
     CONTEXT_MENU menu = CONTEXT_MENU.values()[item.getItemId()];
     switch (menu) {
-      case CANCEL:
-        return super.onContextItemSelected(item);
+    case CANCEL:
+      return super.onContextItemSelected(item);
 
-      case COMMENT:
-        //StartPostActivity(twimptLogData.roomHash, mNowHash, twimptLogData.name);
-        Toast.makeText(this, "未実装", Toast.LENGTH_LONG).show();
-        return true;
-      case OPEN_ROOM:
-        //mNowHash = twimptLogData.roomHash;
-        Intent intent = new Intent(RoomActivity.this, RoomActivity.class);
-        //選択されたログのルームハッシュを送る
-        intent.putExtra(INTENT_ROOM_NAME_HASH, twimptLogData.roomData.hash);
-        startActivity(intent);
-        return true;
-      case WRITE_ROOM:
+    case COMMENT:
+      //StartPostActivity(twimptLogData.roomHash, mNowHash, twimptLogData.name);
+      Toast.makeText(this, "未実装", Toast.LENGTH_LONG).show();
+      return true;
+    case OPEN_ROOM: {
+      //mNowHash = twimptLogData.roomHash;
+      //      ChangeRoom(twimptLogData.roomData.hash);
+      //      UpdateRequest();
+      Intent intent = new Intent(RoomActivity.this, RoomActivity.class);
+      //選択されたログのルームハッシュを送る
+      intent.putExtra(INTENT_ROOM_NAME_HASH, twimptLogData.roomData.hash);
+      startActivity(intent);
+      return true;
+    }
+    case OPEN_USER_ROOM: {
+      //      ChangeRoom(twimptLogData.user.hash);
+      //      UpdateRequest();
+      Intent intent = new Intent(RoomActivity.this, RoomActivity.class);
+      intent.putExtra(INTENT_ROOM_NAME_HASH, twimptLogData.user.hash);
+      startActivity(intent);
+      return true;
+    }
+    case OPEN_ID_ROOM: {
+      Intent intent = new Intent(RoomActivity.this, RoomActivity.class);
+      intent.putExtra(INTENT_ROOM_NAME_HASH, twimptLogData.host.hash);
+      startActivity(intent);
+      return true;
+    }
+    case WRITE_ROOM:
         /* publicのルームはここには来ない */
-        StartPostActivity(twimptLogData.roomData.hash, mNowHash);
-        return true;
-      default:
-        Toast.makeText(this, "エラー", Toast.LENGTH_LONG).show();
-        return super.onContextItemSelected(item);
+      StartPostActivity(twimptLogData.roomData.hash, mNowHash);
+      return true;
+    default:
+      Toast.makeText(this, "エラー", Toast.LENGTH_LONG).show();
+      return super.onContextItemSelected(item);
     }
   }
 
-
   /**
-   * @param content     コンテキスト
    * @param twimptRooms 部屋の一覧
    * @param twimptRoom  現在表示してる部屋
    * @param parsedData  ログのjsonがパースされたデータ
-   * @param top         ログの挿入する位置 trueは上 falseは下 に挿入する
    */
-  public static void PushData(Context content, Map<String, TwimptRoom> twimptRooms, TwimptRoom twimptRoom,
-                              TwimptJson.ParsedData parsedData, final boolean top) {
-    final int size = parsedData.mTwimptLogData.length;
-    for (int i = 0; i < size; i++) {
-      TwimptLogData it = parsedData.mTwimptLogData[i];
-      if (top) {
-        twimptRoom.dataList.add(i, it);
-      } else {
-        twimptRoom.dataList.add(it);
-      }
+  public static void PushUpdateData(Map<String, TwimptRoom> twimptRooms, TwimptRoom twimptRoom,
+                                    ParsedData parsedData) {
+    final TwimptLogData[] twimptLogData = parsedData.mTwimptLogData;
+    final int size = twimptLogData.length;
+    final ArrayList<TwimptLogData> dataList = twimptRoom.dataList;
+    for (int i = size - 1; i >= 0; i--) {
+      dataList.add(0, twimptLogData[i]);
     }
-    for (Map.Entry<String, TwimptRoom> e : parsedData.mTwimptRooms.entrySet()) {
-      if (!twimptRooms.containsKey(e.getKey()))
-        twimptRooms.put(e.getKey(), e.getValue());
-    }
-    return;
+    twimptRooms.putAll(parsedData.mTwimptRooms);
   }
 
+  /**
+   * @param twimptRooms 部屋の一覧
+   * @param twimptRoom  現在表示してる部屋
+   * @param parsedData  ログのjsonがパースされたデータ
+   */
+  public static void PushLogData(Map<String, TwimptRoom> twimptRooms, TwimptRoom twimptRoom,
+                                 ParsedData parsedData) {
+    final TwimptLogData[] twimptLogData = parsedData.mTwimptLogData;
+    final int size = twimptLogData.length;
+    final ArrayList<TwimptLogData> dataList = twimptRoom.dataList;
+    for (int i = 0; i < size; i++) {
+      dataList.add(twimptLogData[i]);
+    }
+    twimptRooms.putAll(parsedData.mTwimptRooms);
+  }
 
   @Override
   public boolean onCreateOptionsMenu(Menu menu) {
@@ -385,43 +504,43 @@ public class RoomActivity extends ActionBarActivity {
   @Override
   public boolean onOptionsItemSelected(MenuItem item) {
     switch (item.getItemId()) {
-      case R.id.post_request:
-        if (mNowHash.equals("public")) {
-          //警告ダイアログ表示
-          AlertDialogFragment dlg = AlertDialogFragment.CreatePostAlert();
-          dlg.show(getSupportFragmentManager(), "tag");
-        } else {
-          StartPostActivity(mNowHash, mNowHash);
-        }
-        break;
-      case R.id.action_auth://認証activityを開く
-        if (!isAuth()) {
-          Intent intent = new Intent(RoomActivity.this, TwimptAuthActivity.class);
-          startActivity(intent);
-        } else {
-          Toast.makeText(this, R.string.authenticated, Toast.LENGTH_LONG).show();
-        }
-        break;
-      case R.id.action_deauthentication: //認証を解除
-        if (isAuth()) {
-          TwimptToken.ClearAccessToken(this);
-          Toast.makeText(this, R.string.authenticated_release, Toast.LENGTH_LONG).show();
-        } else {
-          Toast.makeText(this, R.string.not_authenticated, Toast.LENGTH_LONG).show();
-        }
-        break;
-      case R.id.open_official_now_page: //公式ページをブラウザで開く
-        TwimptRoom twimptRoom = mGlobals.twimptRooms.get(mNowHash);
-        Uri uri = Uri.parse(TwimptNetwork.GetWebPage(twimptRoom.type, twimptRoom.id));
-        Intent i = new Intent(Intent.ACTION_VIEW, uri);
-        startActivity(i);
-        break;
-      case R.id.update_request:
-        UpdateRequest();
-        break;
-      default:
-        Toast.makeText(this, "selected menu, but Unimplemented", Toast.LENGTH_LONG).show();
-        break;
+    case R.id.post_request:
+      if (mNowHash.equals("public")) {
+        //警告ダイアログ表示
+        AlertDialogFragment dlg = AlertDialogFragment.CreatePostAlert();
+        dlg.show(getSupportFragmentManager(), "tag");
+      } else {
+        StartPostActivity(mNowHash, mNowHash);
+      }
+      break;
+    case R.id.action_auth://認証activityを開く
+      if (!isAuth()) {
+        Intent intent = new Intent(RoomActivity.this, TwimptAuthActivity.class);
+        startActivity(intent);
+      } else {
+        Toast.makeText(this, R.string.authenticated, Toast.LENGTH_LONG).show();
+      }
+      break;
+    case R.id.action_deauthentication: //認証を解除
+      if (isAuth()) {
+        TwimptToken.ClearAccessToken(this);
+        Toast.makeText(this, R.string.authenticated_release, Toast.LENGTH_LONG).show();
+      } else {
+        Toast.makeText(this, R.string.not_authenticated, Toast.LENGTH_LONG).show();
+      }
+      break;
+    case R.id.open_official_now_page: //公式ページをブラウザで開く
+      TwimptRoom twimptRoom = mGlobals.twimptRooms.get(mNowHash);
+      Uri uri = Uri.parse(TwimptNetwork.GetWebPage(twimptRoom.type, twimptRoom.id));
+      Intent i = new Intent(Intent.ACTION_VIEW, uri);
+      startActivity(i);
+      break;
+    case R.id.update_request:
+      UpdateRequest();
+      break;
+    default:
+      Toast.makeText(this, "selected menu, but Unimplemented", Toast.LENGTH_LONG).show();
+      break;
     }
     return super.onOptionsItemSelected(item);
   }
@@ -452,17 +571,18 @@ public class RoomActivity extends ActionBarActivity {
 
   private void UpdateRequestRun() {
     try {
-      final Map<String, TwimptRoom> twimptRooms = mGlobals.twimptRooms;
+      final ConcurrentHashMap<String, TwimptRoom> twimptRooms = mGlobals.twimptRooms;
       final TwimptRoom twimptRoom = twimptRooms.get(mNowHash);
       String latestHash = twimptRoom.getLatestLogHash();
       final JSONObject json = TwimptNetwork.UpdateRequest(twimptRoom.type, twimptRoom.hash, latestHash, twimptRoom.LatestModifyHash);
-      final TwimptJson.ParsedData parsedData = TwimptJson.UpdateParse(json);
+      final ParsedData parsedData = new ParsedData(json, twimptRooms);
       mHandler.post(new Runnable() {
         @Override
         public void run() {
-          readHere = parsedData.mTwimptLogData.length;
-          PushData(RoomActivity.this, twimptRooms, twimptRoom, parsedData, true);
+          final int readHere = parsedData.mTwimptLogData.length;
+          PushUpdateData(twimptRooms, twimptRoom, parsedData);
           RefreshEnd();
+          adapter.SetReadHerePosition(readHere);
           //リストビューのスクロール位置をずらす
           if (readHere > 0 && twimptRoom.dataList.size() > 20)
             mListView.setSelectionFromTop(readHere - 1, 10);
@@ -476,14 +596,14 @@ public class RoomActivity extends ActionBarActivity {
 
   private void LogRequestRun() {
     try {
-      final Map<String, TwimptRoom> twimptRooms = mGlobals.twimptRooms;
+      final ConcurrentHashMap<String, TwimptRoom> twimptRooms = mGlobals.twimptRooms;
       final TwimptRoom twimptRoom = twimptRooms.get(mNowHash);
       final JSONObject json = TwimptNetwork.LogRequest(twimptRoom.type, twimptRoom.hash, twimptRoom.getOldestLogHash());
-      final TwimptJson.ParsedData parsedData = TwimptJson.LogParse(json);
+      final ParsedData parsedData = new ParsedData(json, twimptRooms);
       mHandler.post(new Runnable() {
         @Override
         public void run() {
-          PushData(RoomActivity.this, twimptRooms, twimptRoom, parsedData, false);
+          PushLogData(twimptRooms, twimptRoom, parsedData);
           RefreshEnd();
         }
       });
@@ -512,7 +632,9 @@ public class RoomActivity extends ActionBarActivity {
     if (!CanRequest()) return;
     exec.execute(new Runnable() {
       @Override
-      public void run() { UpdateRequestRun(); }
+      public void run() {
+        UpdateRequestRun();
+      }
     });
   }
 
@@ -520,7 +642,9 @@ public class RoomActivity extends ActionBarActivity {
     if (!CanRequest()) return;
     exec.execute(new Runnable() {
       @Override
-      public void run() { LogRequestRun(); }
+      public void run() {
+        LogRequestRun();
+      }
     });
   }
 
@@ -539,12 +663,17 @@ public class RoomActivity extends ActionBarActivity {
     mSwipeRefreshWidget.setRefreshing(false);
     mSwipeRefreshWidget.setEnabled(true);
     adapter.notifyDataSetChanged();
-    if (adapter.getCount() > 0) listEndButton.setVisibility(View.VISIBLE);
+    int cnt = adapter.getCount();
+    if (0 < cnt) {
+      listEndButton.setVisibility(View.VISIBLE);
+
+    }
   }
 
   /** アラートダイアログ */
   public static class AlertDialogFragment extends DialogFragment {
-    public AlertDialogFragment() { }
+    public AlertDialogFragment() {
+    }
 
     public static AlertDialogFragment CreatePostAlert() {
       AlertDialogFragment dlg = new AlertDialogFragment();
@@ -562,25 +691,26 @@ public class RoomActivity extends ActionBarActivity {
       DIALOG[] values = DIALOG.values();
       DIALOG dialogID = values[getArguments().getInt("id")];
       switch (dialogID) {
-        case POST_ALERT:
-          // 確認ダイアログの生成
-          builder = new AlertDialog.Builder(getActivity());
-          builder.setTitle(R.string.confirmation);
-          builder.setMessage(R.string.confirmation_post_to_public);
-          builder.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int which) {
-              //親のアクティビティを取得
-              RoomActivity This = ((RoomActivity) getActivity());
-              This.StartPostActivity("monologue", This.mNowHash);
-            }
-          });
-          builder.setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int which) { }
-          });
-          dialog = builder.create();
-          break;
-        default:
-          dialog = null;
+      case POST_ALERT:
+        // 確認ダイアログの生成
+        builder = new AlertDialog.Builder(getActivity());
+        builder.setTitle(R.string.confirmation);
+        builder.setMessage(R.string.confirmation_post_to_public);
+        builder.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
+          public void onClick(DialogInterface dialog, int which) {
+            //親のアクティビティを取得
+            RoomActivity This = ((RoomActivity) getActivity());
+            This.StartPostActivity("monologue", This.mNowHash);
+          }
+        });
+        builder.setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
+          public void onClick(DialogInterface dialog, int which) {
+          }
+        });
+        dialog = builder.create();
+        break;
+      default:
+        dialog = null;
       }
       return dialog;
     }
