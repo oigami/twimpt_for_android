@@ -16,8 +16,8 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.example.oigami.twimpt.image.FileDownloadThread;
-import com.example.oigami.twimpt.image.FileDownloader;
+import com.example.oigami.twimpt.file.FileDownloadThread;
+import com.example.oigami.twimpt.file.FileDownloader;
 import com.example.oigami.twimpt.twimpt.TwimptLogData;
 
 import java.util.ArrayList;

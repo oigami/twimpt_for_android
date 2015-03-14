@@ -1,4 +1,4 @@
-package com.example.oigami.twimpt;
+package com.example.oigami.twimpt.twimpt;
 
 import com.example.oigami.twimpt.twimpt.room.TwimptRoom;
 
@@ -12,10 +12,10 @@ public  class ParsedRoomData extends ParsedData {
 
   public ParsedRoomData(JSONObject json, final ConcurrentHashMap<String, TwimptRoom> twimptRooms) throws JSONException {
     super(json, twimptRooms);
-    RoomParse(json, twimptRooms);
+    putRoomDataIfAbsent(json, twimptRooms);
   }
 
-  private void RoomParse(JSONObject json, final ConcurrentHashMap<String, TwimptRoom> twimptRooms) throws JSONException {
+  private void putRoomDataIfAbsent(JSONObject json, final ConcurrentHashMap<String, TwimptRoom> twimptRooms) throws JSONException {
     JSONObject room_data = json.getJSONObject("room_data");
     String hash = room_data.getString("hash");
     if (twimptRooms.containsKey(hash)) {
@@ -32,6 +32,6 @@ public  class ParsedRoomData extends ParsedData {
   @Override
   protected void Parse(JSONObject json, final ConcurrentHashMap<String, TwimptRoom> twimptRooms) throws JSONException {
     super.Parse(json, twimptRooms);
-    RoomParse(json, twimptRooms);
+    putRoomDataIfAbsent(json, twimptRooms);
   }
 }

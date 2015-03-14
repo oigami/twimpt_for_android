@@ -1,5 +1,7 @@
 package com.example.oigami.twimpt.twimpt;
 
+import android.text.Spannable;
+
 import com.example.oigami.twimpt.twimpt.room.GuestRoom;
 import com.example.oigami.twimpt.twimpt.room.TwimptRoom;
 import com.example.oigami.twimpt.twimpt.room.UserRoom;
@@ -10,8 +12,10 @@ import org.json.JSONObject;
 public class TwimptLogData {
   /** ユーザーデータ */
   public TwimptRoom user;
-  /** 書き込まれたテキスト */
+  /** 書き込まれたテキスト(たぐhtmlに変換されている) */
   public String text;
+  /** 書き込まれたテキスト(タグがそのままの状態) */
+  public String rawText;
   /** 投稿情報のハッシュ値 */
   public String hash;
   /** 一時的なidのデータ */
@@ -29,7 +33,7 @@ public class TwimptLogData {
   public TwimptRoom roomData;
 
   /** textをデコードした後の、実際に表示するテキストデータ */
-  public CharSequence decodedText;
+  public Spannable decodedText;
   /**
    * 投稿された画像urlを保持
    * nullの場合は画像なし
@@ -42,25 +46,29 @@ public class TwimptLogData {
   }
 
   public interface TwimptRoomParseListener {
-    /** room_dataがnullのばあいはmonologue */
+    /**
+     * @param room_data nullの場合はmonologueのデータ
+     * @return twimptのルームデータ
+     * @throws JSONException
+     */
     public TwimptRoom OnTwimptRoomParse(JSONObject room_data) throws JSONException;
+  }
+
+  public void TextParse(TwimptTextParser parser) {
+    TwimptTextParser.ParsedText parsedText = parser.Parse(rawText);
+    decodedText = parsedText.textSpan;
+    postedImageUrl = parsedText.postedImageUrl;
   }
 
   public void Parse(JSONObject logData, TwimptRoomParseListener roomParseListener) throws JSONException {
     text = logData.getString("text");
+    rawText = logData.getString("raw_text");
     time = logData.getInt("time");
     //ret.text.replaceAll("<br />", "\n");
     hash = logData.getString("hash");
     host = GuestRoom.create(logData.getString("host"));
     {
       JSONObject user_data = logData.getJSONObject("user_data");
-      //ユーザーデータもルームと同じ扱いにする
-      //      TwimptRoom userData = roomParseListener.OnTwimptRoomParse(user_data);
-      //      //ユーザデータなので書き換える
-      //      userData.type = "user";
-      //      if (userData.hash.length() == 0)
-      //        userData.hash = null;
-
       user = UserRoom.create(user_data);
       name = user.name;
       icon = user_data.getString("icon");

@@ -46,5 +46,22 @@
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:text="ラブライブ"/>
-
+    <CheckBox
+        android:id="@+id/monhan"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="モンハン"/>
+    <CheckBox
+        android:id="@+id/imas"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="アイマス"/>
+    <CheckBox
+        android:id="@+id/aikatsu"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="アイカツ"/>
 </LinearLayout>

@@ -1,6 +1,5 @@
-package com.example.oigami.twimpt.image;
+package com.example.oigami.twimpt.file;
 
-import java.io.FileOutputStream;
 import java.util.concurrent.ExecutorService;
 
 /**

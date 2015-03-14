@@ -1,4 +1,4 @@
-package com.example.oigami.twimpt;
+package com.example.oigami.twimpt.util;
 
 import java.util.Calendar;
 

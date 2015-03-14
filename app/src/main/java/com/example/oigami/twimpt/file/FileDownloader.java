@@ -1,4 +1,4 @@
-package com.example.oigami.twimpt.image;
+package com.example.oigami.twimpt.file;
 
 import com.example.oigami.twimpt.debug.Logger;
 
@@ -16,13 +16,13 @@ import java.net.URLConnection;
  */
 
 public class FileDownloader {
+
   private final int TIMEOUT_READ = 5000;
   private final int TIMEOUT_CONNECT = 30000;
   private final int BUFFER_SIZE = 1024;
   private OnDownloadBeginListener mDownloadBegin;
   private OutputStream mFileOutputStream;
   private BufferedInputStream bufferedInputStream;
-  private URLConnection mURLConnection;
   private String mUrlString;
   private OnDownloadingListener mDownloading;
   private OnDownloadedListener mDownloaded;
@@ -87,11 +87,17 @@ public class FileDownloader {
   public void SetOnDownloadedListener(OnDownloadedListener listener) {
     mDownloaded = listener;
   }
+  public void SetOnCancelListener(OnCancelListener listener) {
+    mCancel = listener;
+  }
 
   public boolean Download() {
     Logger.log("download:" + mUrlString);
     try {
-      if (!connect(mUrlString)) return true;
+      if (!connect(mUrlString)) {
+        Logger.log("ConnectError");
+        return false;
+      }
     } catch (IOException e) {
       Logger.log("ConnectError:" + e.getMessage());
       Logger.log("ConnectError:" + e.toString());
@@ -131,17 +137,17 @@ public class FileDownloader {
   private boolean connect(String sUrl) throws IOException {
 
     URL url = new URL(sUrl);
-    mURLConnection = url.openConnection();
-    mURLConnection.setReadTimeout(TIMEOUT_READ);
-    mURLConnection.setConnectTimeout(TIMEOUT_CONNECT);
-    InputStream inputStream = new FlushedInputStream(mURLConnection.getInputStream());
+    URLConnection URLConnection = url.openConnection();
+    URLConnection.setReadTimeout(TIMEOUT_READ);
+    URLConnection.setConnectTimeout(TIMEOUT_CONNECT);
+    InputStream inputStream = new FlushedInputStream(URLConnection.getInputStream());
     bufferedInputStream = new BufferedInputStream(inputStream, BUFFER_SIZE);
     if (bufferedInputStream == null) return false;
     /* ダウンロードするサイズ */
-    int totalByte = mURLConnection.getContentLength();
+    int totalByte = URLConnection.getContentLength();
     Logger.log("downloading: total_byte" + totalByte);
     if (mDownloadBegin != null)
-      mFileOutputStream = mDownloadBegin.DownloadBegin(mURLConnection);
+      mFileOutputStream = mDownloadBegin.DownloadBegin(URLConnection);
     if (mFileOutputStream == null) return false;
     return true;
   }

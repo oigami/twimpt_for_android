@@ -10,7 +10,6 @@ import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.util.DisplayMetrics;
 import android.widget.ImageView;
-import android.widget.Toast;
 
 import java.io.ByteArrayOutputStream;
 
@@ -27,18 +26,21 @@ public class ImageViewActivity extends ActionBarActivity {
     setContentView(R.layout.image_view);
     Intent i = getIntent();
     String filename = i.getStringExtra(INTENT_DRAWABLE_FILENAME);
+    filename = this.getFileStreamPath(filename).getAbsolutePath();
     ImageView imageView = (ImageView) findViewById(R.id.image_view);
     imageView.setImageDrawable(Drawable.createFromPath(filename));
   }
-private Bitmap LoadToJustDisplayBitmap(byte[] bitmapByte){
-  Point size = new Point();
-  DisplayMetrics display = this.getResources().getDisplayMetrics();
-  size.x = display.widthPixels;
-  size.y = display.heightPixels;
-  Bitmap bitmap = loadSavedSizeBitmap(Math.max(size.x, size.y), bitmapByte);
-  bitmapByte = null;
-  return bitmap;
-}
+
+  private Bitmap LoadToJustDisplayBitmap(byte[] bitmapByte) {
+    Point size = new Point();
+    DisplayMetrics display = this.getResources().getDisplayMetrics();
+    size.x = display.widthPixels;
+    size.y = display.heightPixels;
+    Bitmap bitmap = loadSavedSizeBitmap(Math.max(size.x, size.y), bitmapByte);
+    bitmapByte = null;
+    return bitmap;
+  }
+
   public static Bitmap loadSavedSizeBitmap(int maxSize, byte[] data) {
     BitmapFactory.Options option = new BitmapFactory.Options();
     //サイズだけロードするように設定して

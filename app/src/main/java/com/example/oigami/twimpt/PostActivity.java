@@ -15,6 +15,7 @@ import android.support.v7.app.ActionBarActivity;
 import android.text.Editable;
 import android.view.ContextMenu;
 import android.view.LayoutInflater;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -23,10 +24,11 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.oigami.twimpt.twimpt.ParsedData;
 import com.example.oigami.twimpt.twimpt.TwimptNetwork;
 import com.example.oigami.twimpt.twimpt.room.TwimptRoom;
 import com.example.oigami.twimpt.twimpt.token.AccessTokenData;
-
+import android.support.v7.view.ActionMode;
 import org.json.JSONObject;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -45,6 +47,7 @@ public class PostActivity extends ActionBarActivity {
   public static final String INTENT_NOW_HASH = "NOW_HASH";
   private DataApplication globals;
   boolean mNowUpdate = false;
+  EditText mPostMessageEdit;
   private String mNowRoomHash, mPostRoomHash;
   private Handler mHandler = new Handler() {
     //メッセージ受信
@@ -65,8 +68,7 @@ public class PostActivity extends ActionBarActivity {
 
     TwimptRoom twimptRoom = globals.twimptRooms.get(mPostRoomHash);
     getSupportActionBar().setTitle(twimptRoom.name);
-    EditText mPostMessageEdit = (EditText) findViewById(R.id.post_message);
-
+    mPostMessageEdit = (EditText) findViewById(R.id.post_message);
     //mPostMessageEdit.showContextMenu();
     registerForContextMenu(mPostMessageEdit);
 
@@ -89,10 +91,10 @@ public class PostActivity extends ActionBarActivity {
   @Override
   public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
     // コンテキストメニューを作る
-    menu.clear();
+    //menu.clear();
     menu.setHeaderTitle(null);
     menu.add(0, CONTEXT_MENU.OMIKUJI.ordinal(), 0, R.string.insert_lottery_command);
-    //menu.add(0, CONTEXT_MENU.DEFAULT.ordinal(), 0, "テキストの選択");
+    menu.add(0, CONTEXT_MENU.DEFAULT.ordinal(), 0, "テキストの選択");
     menu.add(0, CONTEXT_MENU.CANCEL.ordinal(), 0, R.string.cancel);
 
     super.onCreateContextMenu(menu, v, menuInfo);
@@ -111,6 +113,37 @@ public class PostActivity extends ActionBarActivity {
       return true;
     case DEFAULT:
       //TODO 仕様が微妙なので処理方法を考える
+      startSupportActionMode(new ActionMode.Callback() {
+        @Override
+        public boolean onCreateActionMode(ActionMode actionMode, Menu menu) {
+          // Inflate our menu from a resource file
+        //  actionMode.getMenuInflater().inflate(R.menu.edit_text, menu);
+          menu.add(0,android.R.id.paste,0,"");
+          menu.add(0,android.R.id.cut,0,"");
+          menu.add(0,android.R.id.copy,0,"");
+          // Return true so that the action mode is shown
+          return true;
+        }
+
+        @Override
+        public boolean onPrepareActionMode(ActionMode actionMode, Menu menu) {
+          // As we do not need to modify the menu before displayed, we return false.
+          return false;
+        }
+
+        @Override
+        public boolean onActionItemClicked(ActionMode actionMode, MenuItem menuItem) {
+          // Similar to menu handling in Activity.onOptionsItemSelected()
+
+          return false;
+        }
+
+        @Override
+        public void onDestroyActionMode(ActionMode actionMode) {
+          // Allows you to be notified when the action mode is dismissed
+        }
+      });
+      //mPostMessageEdit.startActionMode(mPostMessageEdit.getCustomSelectionActionModeCallback());
       // unregisterForContextMenu(mPostMessageEdit);
       //mPostMessageEdit.selectAll();
       //mPostMessageEdit.performLongClick();
@@ -199,7 +232,7 @@ public class PostActivity extends ActionBarActivity {
       //inflate.inflate(R.layout.lottery_setting_popup, null);
       final View view = inflate.inflate(R.layout.lottery_setting_popup, null);
       final SharedPreferences sharedPref = This.getSharedPreferences("lottery", MODE_PRIVATE);
-      final String checkboxStr[] = {"omikuji", "meshi", "seiyu", "precure", "pokemon", "lovelive"};
+      final String checkboxStr[] = {"omikuji", "meshi", "seiyu", "precure", "pokemon", "lovelive","monhan" ,"imas" ,"aikatsu"};
       final CheckBox checkBox[] = new CheckBox[checkboxStr.length];
       for (int i = 0; i < checkboxStr.length; ++i) {
         int viewId = getResources().getIdentifier(checkboxStr[i], "id", This.getPackageName());

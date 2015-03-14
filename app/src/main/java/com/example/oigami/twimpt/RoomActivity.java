@@ -29,13 +29,19 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import com.example.oigami.twimpt.debug.Logger;
-import com.example.oigami.twimpt.image.FileDownloadThread;
-import com.example.oigami.twimpt.image.FileDownloader;
-import com.example.oigami.twimpt.image.ImageCacheDB;
+import com.example.oigami.twimpt.file.FileDownloadThread;
+import com.example.oigami.twimpt.file.FileDownloader;
+import com.example.oigami.twimpt.image.database.ImageCacheDB;
+import com.example.oigami.twimpt.image.database.TwimptImageTable;
+import com.example.oigami.twimpt.image.database.TwimptIconTable;
+import com.example.oigami.twimpt.twimpt.ParsedData;
+import com.example.oigami.twimpt.twimpt.ParsedRoomData;
+import com.example.oigami.twimpt.twimpt.ParsedUserData;
 import com.example.oigami.twimpt.twimpt.TwimptLogData;
 import com.example.oigami.twimpt.twimpt.TwimptNetwork;
 import com.example.oigami.twimpt.twimpt.room.TwimptRoom;
 import com.example.oigami.twimpt.twimpt.token.AccessTokenData;
+import com.example.oigami.twimpt.util.Network;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -77,13 +83,13 @@ public class RoomActivity extends ActionBarActivity {
 
   private TwimptListAdapter adapter;
   private Button listEndButton;
-  private ImageCacheDB userImageDB;
-  private ImageCacheDB uploadImageDB;
+  private ImageCacheDB mImageCacheDB;
   /** コア数 */
   private static final int NUMBER_OF_CORES = Runtime.getRuntime().availableProcessors();
   private ExecutorService exec;
 
-  private DrawableListener mIconListener, mImageListener;
+  private TwimptImageAdapter.DrawableListener mImageListener;
+  private TwimptListAdapter.DrawableListener mIconListener;
 
   //private String accessToken, accessTokenSecret;
   private static final class WhatHandler {
@@ -112,8 +118,9 @@ public class RoomActivity extends ActionBarActivity {
   }
 
   void deleteDatabase() {
-    deleteDatabase("imagecache.db");
-    deleteDatabase("PostedImage.db");
+    for (String s : databaseList()) {
+      deleteDatabase(s);
+    }
     for (String s : fileList()) {
       deleteFile(s);
     }
@@ -131,6 +138,8 @@ public class RoomActivity extends ActionBarActivity {
       deleteDatabase();
     } else if (version == 1) {
       deleteDatabase();
+    } else if (version == 2) {
+      deleteDatabase();
     }
     Editor e = sharedPref.edit();
     e.putInt("code", nowVersion);
@@ -144,8 +153,7 @@ public class RoomActivity extends ActionBarActivity {
     exec = Executors.newFixedThreadPool(NUMBER_OF_CORES >= 1 ? NUMBER_OF_CORES : 1);
     //deleteDatabase();
     VersionCheck();
-    userImageDB = new ImageCacheDB(RoomActivity.this, "imagecache.db");
-    uploadImageDB = new ImageCacheDB(RoomActivity.this, "PostedImage.db");
+    mImageCacheDB = new ImageCacheDB(RoomActivity.this);
     //    deleteDatabase(uploadImageDB.getDbFileName());
     //    uploadImageDB = new ImageCacheDB(RoomActivity.this, "PostedImage.db");
 
@@ -164,7 +172,6 @@ public class RoomActivity extends ActionBarActivity {
         UpdateRequest();
       }
     });
-
     mListView = (ListView) findViewById(R.id.content);
     listEndButton = new Button(this);
     listEndButton.setText(R.string.load_log);
@@ -182,8 +189,8 @@ public class RoomActivity extends ActionBarActivity {
         openContextMenu(view);
       }
     });
-    mIconListener = new DrawableListener(RoomActivity.this, userImageDB, exec);
-    mImageListener = new DrawableListener(RoomActivity.this, uploadImageDB, exec);
+    mIconListener = new TwimptIconListener(RoomActivity.this, mImageCacheDB.getTwimptIconTable(), exec);
+    mImageListener = new TwimptImageListener(RoomActivity.this, mImageCacheDB.getTwimptImageTable(), exec);
 
     Intent intent = getIntent();
     mNowHash = intent.getStringExtra(INTENT_ROOM_NAME_HASH);
@@ -216,7 +223,7 @@ public class RoomActivity extends ActionBarActivity {
         TwimptImageAdapter imageAdapter = (TwimptImageAdapter) parent.getAdapter();
         //drawableをbitmapに変換する
         String url = imageAdapter.getItemUrl(position);
-        String filename = uploadImageDB.getFileName(url, RoomActivity.this);
+        String filename = mImageCacheDB.getTwimptImageTable().getFileName(url);
         Intent intent = new Intent(RoomActivity.this, ImageViewActivity.class);
         intent.putExtra(ImageViewActivity.INTENT_DRAWABLE_FILENAME, filename);
         startActivity(intent);
@@ -263,7 +270,6 @@ public class RoomActivity extends ActionBarActivity {
       return;
     }
 
-    final int UNKNOWN = -1;
     final int ROOM = 0;
     final int USER = 1;
     final int LOG = 2;
@@ -718,13 +724,13 @@ public class RoomActivity extends ActionBarActivity {
 
   private Map<String, Drawable> ImageCacheDrawable = new HashMap<String, Drawable>();
 
-  class DrawableListener implements TwimptImageAdapter.DrawableListener {
-    private ImageCacheDB mDatabase;
+  class TwimptIconListener implements TwimptListAdapter.DrawableListener {
+    private TwimptIconTable mIconTable;
     private Context mContext;
     private ExecutorService mExec;
 
-    public DrawableListener(Context context, ImageCacheDB database, ExecutorService exec) {
-      mDatabase = database;
+    public TwimptIconListener(Context context, TwimptIconTable iconTable, ExecutorService exec) {
+      mIconTable = iconTable;
       mContext = context;
       mExec = exec;
     }
@@ -732,39 +738,77 @@ public class RoomActivity extends ActionBarActivity {
     @Override
     public Drawable getDrawable(String url) {
       Drawable drawable;
-      //キャッシュから画像を取得
-      drawable = ImageCacheDrawable.get(url);
-      if (drawable != null) {
-        //mTwimptLogData.postedImageUrl.set(position, new Pair<String, Drawable>(url, drawable));
+      drawable = ImageCacheDrawable.get(url); //キャッシュから画像を取得
+      if (drawable != null)
         return drawable;
-      }
       //データベースから画像を取得
-      drawable = mDatabase.getDrawable(url, mContext);
-      if (drawable != null) {
+      drawable = mIconTable.getDrawable(url);
+      if (drawable != null)
         ImageCacheDrawable.put(url, drawable);
-      }
       return drawable;
     }
 
     @Override
-    public FileDownloadThread downloadDrawable(final String url) {
-      if (ImageCacheDrawable.containsKey(url)) return null;
-      ImageCacheDrawable.put(url, null);
-      return new FileDownloadThread(mExec, url, new FileDownloader.OnDownloadBeginListener() {
+    public FileDownloadThread downloadDrawable(final String hash) {
+
+      if (ImageCacheDrawable.containsKey(hash)) return null;
+      ImageCacheDrawable.put(hash, null);
+
+      return new FileDownloadThread(mExec, "http://twimpt.com/icon/" + hash, new FileDownloader.OnDownloadBeginListener() {
         @Override
         public OutputStream DownloadBegin(URLConnection urlConnection) {
           try {
-            final String type = urlConnection.getContentType();
             final long length = urlConnection.getContentLength();
-            return mDatabase.openFileOutput(url, type, length, mContext);
+            return mIconTable.openFileOutput(hash, length, mContext);
           } catch (FileNotFoundException e) {
             e.printStackTrace();
           }
           return null;
         }
       });
-      //キャッシュにロードする
-      //ImageCacheDrawable.put(url, uploadImageDB.getDrawable(url, RoomActivity.this));
+    }
+  }
+
+  class TwimptImageListener implements TwimptImageAdapter.DrawableListener {
+    private TwimptImageTable mImageTable;
+    private Context mContext;
+    private ExecutorService mExec;
+
+    public TwimptImageListener(Context context, TwimptImageTable imageTable, ExecutorService exec) {
+      mImageTable = imageTable;
+      mContext = context;
+      mExec = exec;
+    }
+
+    @Override
+    public Drawable getDrawable(String hash) {
+      Drawable drawable;
+      drawable = ImageCacheDrawable.get(hash); //キャッシュから画像を取得
+      if (drawable != null)
+        return drawable;
+      //データベースから画像を取得
+      drawable = mImageTable.getDrawable(hash, mContext);
+      if (drawable != null)
+        ImageCacheDrawable.put(hash, drawable);
+      return drawable;
+    }
+
+    @Override
+    public FileDownloadThread downloadDrawable(final String hash) {
+      if (ImageCacheDrawable.containsKey(hash)) return null;
+      ImageCacheDrawable.put(hash, null);
+      return new FileDownloadThread(mExec, "http://twimpt.com/upload/original/" + hash, new FileDownloader.OnDownloadBeginListener() {
+        @Override
+        public OutputStream DownloadBegin(URLConnection urlConnection) {
+          try {
+            final long length = urlConnection.getContentLength();
+            return mImageTable.openFileOutput(hash, length, mContext);
+          } catch (FileNotFoundException e) {
+            e.printStackTrace();
+          }
+          return null;
+        }
+      });
     }
   }
 }

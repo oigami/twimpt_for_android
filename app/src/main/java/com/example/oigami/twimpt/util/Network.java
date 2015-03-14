@@ -1,4 +1,4 @@
-package com.example.oigami.twimpt;
+package com.example.oigami.twimpt.util;
 
 import android.content.Context;
 import android.net.ConnectivityManager;

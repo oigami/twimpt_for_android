@@ -1,4 +1,4 @@
-package com.example.oigami.twimpt;
+package com.example.oigami.twimpt.twimpt;
 
 import com.example.oigami.twimpt.twimpt.TwimptLogData;
 import com.example.oigami.twimpt.twimpt.room.TwimptRoom;

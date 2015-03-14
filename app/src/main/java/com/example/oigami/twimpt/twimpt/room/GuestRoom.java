@@ -1,7 +1,5 @@
 package com.example.oigami.twimpt.twimpt.room;
 
-import org.json.JSONObject;
-
 public class GuestRoom {
   /** 投稿ユーザの一時的なID(1日毎に変わる） */
   //  public String host;
