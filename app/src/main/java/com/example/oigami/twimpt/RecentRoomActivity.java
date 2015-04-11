@@ -7,6 +7,7 @@ import android.database.DataSetObserver;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.ActionBarActivity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -15,9 +16,11 @@ import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.oigami.twimpt.twimpt.TwimptJson;
 import com.example.oigami.twimpt.twimpt.TwimptNetwork;
+import com.example.oigami.twimpt.util.Network;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -30,18 +33,17 @@ import java.util.ArrayList;
  */
 public class RecentRoomActivity extends ActionBarActivity {
   public static final String INTENT_ROOM_RECENT_NAME = "RECENT_ROOM_NAME";
-  DataApplication globals;
-  int mNowPage = 1;
-  String mRecentUrl;
-  boolean mNowUpdate = false;
-  ArrayList<String> mArrayListHash = new ArrayList<String>();
+  private DataApplication globals;
+  private int mNowPage = 1;
+  private String mRecentUrl;
+  private boolean mNowUpdate = false;
+  private SwipeRefreshLayout mSwipeRefreshWidget;
+  private ArrayList<String> mArrayListHash = new ArrayList<String>();
   private RecentRoomsListAdapter mAdapter = new RecentRoomsListAdapter();
   Handler mHandler = new Handler() {
     @Override
     public void handleMessage(Message message) {
-      mNowPage++;
-      mNowUpdate = false;
-      mAdapter.notifyDataSetChanged();
+      RefreshEnd();
     }
   };
 
@@ -73,19 +75,58 @@ public class RecentRoomActivity extends ActionBarActivity {
         Intent intent1 = new Intent(RecentRoomActivity.this, RoomActivity.class);
         intent1.putExtra(RoomActivity.INTENT_ROOM_NAME_HASH, mArrayListHash.get(i));
         intent1.putExtra(RoomActivity.INTENT_NAME_TYPE, "room");
-
         startActivity(intent1);
       }
     });
     listView.setAdapter(mAdapter);
-
+    mSwipeRefreshWidget = (SwipeRefreshLayout) findViewById(R.id.recent_room_refresh_layout);
+    mSwipeRefreshWidget.setColorSchemeResources(
+            R.color.blue_bright,
+            R.color.green_light,
+            R.color.orange_light,
+            R.color.red_light);
+    mSwipeRefreshWidget.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+      @Override
+      public void onRefresh() {
+        GetRecentRoomData();
+      }
+    });
     //new TwimptAsyncTask(globals.twimptRooms.get(globals.now_room_hash))
     GetRecentRoomData();
   }
+  private boolean RefreshStart() {
+    //すでにアップデート中の場合
+    if (mNowUpdate) return false;
+
+    mNowUpdate = true;
+    mSwipeRefreshWidget.setRefreshing(true);
+    mSwipeRefreshWidget.setEnabled(false);
+    return true;
+  }
+
+  private void RefreshEnd(){
+    mNowUpdate = false;
+    mSwipeRefreshWidget.setRefreshing(false);
+    mSwipeRefreshWidget.setEnabled(true);
+    mAdapter.notifyDataSetChanged();
+  }
+
+  private boolean CanRequest() {
+    if (!Network.isConnected(this)) {
+      RefreshEnd();
+      Toast.makeText(this, R.string.update_network_error, Toast.LENGTH_LONG).show();
+      return false;
+    }
+    if (!RefreshStart()) {
+      RefreshEnd();
+      Toast.makeText(this, R.string.updating, Toast.LENGTH_SHORT).show();
+      return false;
+    }
+    return true;
+  }
 
   public void GetRecentRoomData() {
-    if (!mNowUpdate) return;
-    mNowUpdate = true;
+    if (!CanRequest()) return;
     new Thread(new Runnable() {
       @Override
       public void run() {
@@ -131,28 +172,16 @@ public class RecentRoomActivity extends ActionBarActivity {
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
       View v = convertView;
-      // ビューホルダー
       ViewHolder holder = null;
-      // 無い場合だけ作る
       if (v == null) {
-        // XMLからレイアウトを作る
         LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         v = inflater.inflate(R.layout.recent_list_view, null);
-        // ビューホルダーを作る
         holder = new ViewHolder();
-        // テキストビューを取り出す
         holder.name = (TextView) v.findViewById(R.id.recent_name);
-        // ビューにホルダーを登録する
         v.setTag(holder);
-        // もう作られているときはそっちから取り出す
       } else {
-        // 登録されているモノを使う
         holder = (ViewHolder) v.getTag();
       }
-      /*if (v == null) {
-        LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        v = inflater.inflate(R.layout.list_view, null);
-      }*/
       String hash = getItem(position);
       if (hash != null) {//おそらくnullはないが念のため
         holder.name.setText(globals.twimptRooms.get(hash).name);

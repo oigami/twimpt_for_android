@@ -116,7 +116,7 @@ public class TwimptListAdapter extends BaseAdapter {
   }
 
   @Override
-  public Object getItem(int position) {
+  public TwimptLogData getItem(int position) {
     if (mReadHere == position)//「ここまで読んだ」タグの場合
       return null;
     if (mReadHere < position)//「ここまで読んだ」タグより大きい場合
@@ -191,8 +191,7 @@ public class TwimptListAdapter extends BaseAdapter {
       //holder.text.setText(twimptLogData.decodedText);
       holder.name.setText(twimptLogData.user.name);
 
-      // ミリ秒で比較するので1000倍する
-      String timeString = TimeDiff.toDiffDate(twimptLogData.time * 1000) + "前";
+      String timeString = TimeDiff.toDiffDate(twimptLogData.time) + "前";
       holder.time.setText(timeString);
       holder.roomName.setText(twimptLogData.roomData.name);
 
@@ -222,7 +221,7 @@ public class TwimptListAdapter extends BaseAdapter {
       });
       downloader.Download();
       return v;//通常のログデータのviewを返す
-    } else {
+    }
       //「ここまで読んだ」タグの場合
       int id = convertView == null ? 0 : convertView.getId();
       if (convertView == null || id != R.layout.read_here) {
@@ -230,7 +229,7 @@ public class TwimptListAdapter extends BaseAdapter {
         convertView = inflater.inflate(R.layout.read_here, null);
       }
       return convertView;
-    }
+
   }
 
   /**

@@ -46,7 +46,7 @@ public class RoomListActivity extends ActionBarActivity {
             res.getString(R.string.public_name),
             res.getString(R.string.monologue_name),
             res.getString(R.string.recent_created_name),
-            res.getString(R.string.recent_opened_name),
+//            res.getString(R.string.recent_opened_name),
             res.getString(R.string.recent_posted_name)
     };
     ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, members);

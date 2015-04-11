@@ -2,7 +2,6 @@ package com.example.oigami.twimpt.twimpt;
 
 import android.graphics.Color;
 import android.text.Editable;
-import android.text.Html;
 import android.text.Spannable;
 import android.text.Spanned;
 import android.text.style.BackgroundColorSpan;
@@ -11,11 +10,8 @@ import com.example.oigami.twimpt.debug.Logger;
 import com.example.oigami.twimpt.util.HtmlEx;
 
 import org.xml.sax.Attributes;
-import org.xml.sax.SAXNotRecognizedException;
-import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.XMLReader;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -24,7 +20,9 @@ import java.util.regex.Pattern;
  * Created by oigami on 2015/02/17
  */
 public class TwimptTextParser {
-  static class ParsedText {
+  private static final String TWIMPT_IMAGE_URL = "http://twimpt.com/upload/original/";
+
+  static class ParsedTextData {
     Spannable textSpan;
     /**
      * 投稿された画像urlを保持
@@ -57,7 +55,10 @@ public class TwimptTextParser {
   }
 
   private static final String[][] imageRegex = {
-          {"\\[img:([0-9]+?):([a-zA-Z0-9]+?)\\]([a-zA-Z0-9]+?)\\[/img\\]", "<a href='" + createImagePath("$1", "$2", "$3") + "'>$3</a>"}
+          {
+                  "\\[img:([0-9]+?):([a-zA-Z0-9]+?)\\]([a-zA-Z0-9]+?)\\[/img\\]",
+                  "<a href='" + TWIMPT_IMAGE_URL + createImagePath("$1", "$2", "$3") + "'>$3</a>"
+          }
   };
   private static final String[][] decorationRegex = {
           {"((?:p|tp|ttp|http|^|\\s)(s?://[-_.!~*'()a-zA-Z0-9;/?:@&=+\\$,%#]+))", "<a href='http$2' target='_blank'>$1</a>"},
@@ -76,7 +77,6 @@ public class TwimptTextParser {
           {"\\[color:(#?[a-fA-F0-9]+?)\\]([\\s\\S]*?)\\[/color\\]", "<font color=$1>$2</font>"},
           {"\\[bgcolor:(#?[a-fA-F0-9]+?)\\]([\\s\\S]*?)\\[/bgcolor\\]", "<bg color=$1>$2</bg>"},
 
-          //          [/\[bgcolor\:#?([a-fA-F0-9]+?)\]([\s\S]*?)\[\/bgcolor\]/g,'$2'],
           //          [/\[border\:#?([a-fA-F0-9]+?)\]([\s\S]*?)\[\/border\]/g,'$2'],
           //          [/\[pre\]([\s\S]*?)\[\/pre\]/g,'$1'],
           {"\\[censored\\]", "<font color=#ff0000>禁則事項です</font>"},
@@ -84,7 +84,6 @@ public class TwimptTextParser {
           //          [/\!do/g,'┣゛'],
           //          [/\!xxx/g,'&hearts;&hearts;&hearts;'],
 
-          //          [/\[img\:([0-9]+?)\:([a-zA-Z0-9]+?)\]([a-zA-Z0-9]+?)\[\/img\]/g,'【画像】'],
           //          [/\[quote\](.*?)\[\/quote\]/g,'[引用]'],
           //          [/\!link\:account/g,'アカウント'],
           //          [/\!link\:profile/g,'プロフィール'],
@@ -115,24 +114,22 @@ public class TwimptTextParser {
     }
   }
 
-  public ParsedText Parse(String rawText) {
-        rawText="[color:#ffff00]color:#ffff00[/color][sub]sub[/sub][sup]sup[/sup]" +
-                "[big]big[/big][small]small[/small][o]o[/o][u]u[/u][s]s[/s]" +
-                "[i]i[/i][b]b[/b][bgcolor:#8000ff]bgcolor:#8000ff[/bgcolor]";
+  public ParsedTextData Parse(String rawText) {
+    //    rawText="[color:#ffff00]color:#ffff00[/color][sub]sub[/sub][sup]sup[/sup]" +
+    //                    "[big]big[/big][small]small[/small][o]o[/o][u]u[/u][s]s[/s]" +
+    //                    "[bgcolor:#8000ff]bgcolor:#8000ff[/bgcolor][i]i[/i][b]b[/b]";
 
     //    data.rawText = "http://www.google.co.jp/tesuto\n";
     //    data.rawText += "ttp://www.google.co.jp/テスト\n";
     //    data.rawText += "ttps://www.google.co.jp/ ";
     //    data.rawText += "https://www.google.co.jp/\n";
-    //    data.rawText += "://www.google.co.jp/\n";
     //    data.rawText += "ps://www.google.co.jp/\n";
-    rawText += "[bgcolor:#800000]test[/bgcolor]";
-    ParsedText parsedText = new ParsedText();
+    //    data.rawText += "://www.google.co.jp/\n";
+    ParsedTextData parsedText = new ParsedTextData();
     String tempStr = TextDecorationParse(rawText);
     Spanned tempSpanned = HtmlEx.fromHtml(ImageParse(parsedText, tempStr), null, new HtmlEx.TagHandler() {
       @Override
       public void handleTag(boolean opening, String tag, Editable output, Attributes attributes, XMLReader xmlReader) {
-        Logger.log(tag + ":" + opening);
         if (tag.equals("bg")) {
           int len = output.length();
           if (opening) {
@@ -175,10 +172,11 @@ public class TwimptTextParser {
         text = m.replaceAll(decorationRegex[cnt][1]);
       cnt++;
     }
-    return text;
+    //最初がタグの場合はそれがrootとして扱われてしまうのでrootを入れておく
+    return "<root>" + text + "</root>";
   }
 
-  public String ImageParse(ParsedText parsedText, String text) {
+  public String ImageParse(ParsedTextData parsedText, String text) {
     int cnt = 0;
     ArrayList<String> url = new ArrayList<String>();
     for (Pattern pattern : mImagePatterns) {

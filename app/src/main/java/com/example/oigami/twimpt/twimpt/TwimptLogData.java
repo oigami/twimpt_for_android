@@ -9,7 +9,9 @@ import com.example.oigami.twimpt.twimpt.room.UserRoom;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class TwimptLogData {
+import java.io.Serializable;
+
+public class TwimptLogData implements Serializable {
   /** ユーザーデータ */
   public TwimptRoom user;
   /** 書き込まれたテキスト(たぐhtmlに変換されている) */
@@ -51,11 +53,11 @@ public class TwimptLogData {
      * @return twimptのルームデータ
      * @throws JSONException
      */
-    public TwimptRoom OnTwimptRoomParse(JSONObject room_data) throws JSONException;
+    public TwimptRoom TwimptRoomParse(JSONObject room_data) throws JSONException;
   }
 
   public void TextParse(TwimptTextParser parser) {
-    TwimptTextParser.ParsedText parsedText = parser.Parse(rawText);
+    TwimptTextParser.ParsedTextData parsedText = parser.Parse(rawText);
     decodedText = parsedText.textSpan;
     postedImageUrl = parsedText.postedImageUrl;
   }
@@ -77,7 +79,6 @@ public class TwimptLogData {
     if (!logData.isNull("room_data")) {
       room_data = logData.getJSONObject("room_data");
     }
-    roomData = roomParseListener.OnTwimptRoomParse(room_data);
-
+    roomData = roomParseListener.TwimptRoomParse(room_data);
   }
 }

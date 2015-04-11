@@ -88,6 +88,15 @@ public class TwimptImageTable {
     return drawable;
   }
 
+  private long insertOrGet(String hash, long totalByteSize) {
+    long id = insert(hash, totalByteSize, false);
+    if (id == -1) {
+      final Cursor c = mImageCacheDB.existsFile(TABLE_NAME, hash, Column.HASH);
+      if (c.moveToFirst()) id = c.getLong(c.getColumnIndex(Column.ID));
+    }
+    return id;
+  }
+
   /**
    * 画像ファイルを保存する<br>
    * この関数ではファイルを開くだけなので書き込みを別途する必要がある
@@ -97,7 +106,9 @@ public class TwimptImageTable {
    * @throws java.io.FileNotFoundException
    */
   public OutputStream openFileOutput(final String hash, long totalByteSize, Context context) throws FileNotFoundException {
-    final long id = insert(hash, totalByteSize, false);
+    if (getDrawable(hash, context) != null) return null;
+    final long id = insertOrGet(hash, totalByteSize);
+    if (id == -1) return null;
     final String fileName = mImageCacheDB.getFileName(TABLE_NAME, id);
     Logger.log(fileName);
     FileOutputStream s = context.openFileOutput(fileName, Context.MODE_PRIVATE);

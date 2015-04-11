@@ -1,5 +1,6 @@
 package com.example.oigami.twimpt;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
@@ -18,6 +19,7 @@ import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v4.widget.SwipeRefreshLayout.OnRefreshListener;
 import android.support.v7.app.ActionBarActivity;
 import android.view.ContextMenu;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -25,7 +27,10 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.Button;
+import android.widget.GridView;
+import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.oigami.twimpt.debug.Logger;
@@ -42,6 +47,7 @@ import com.example.oigami.twimpt.twimpt.TwimptNetwork;
 import com.example.oigami.twimpt.twimpt.room.TwimptRoom;
 import com.example.oigami.twimpt.twimpt.token.AccessTokenData;
 import com.example.oigami.twimpt.util.Network;
+import com.example.oigami.twimpt.util.TimeDiff;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -66,10 +72,6 @@ public class RoomActivity extends ActionBarActivity {
     OPEN_USER_ROOM,
     OPEN_ID_ROOM,
     WRITE_ROOM,
-  }
-
-  private enum DIALOG {
-    POST_ALERT
   }
 
   public static final String INTENT_ROOM_NAME_HASH = "NOW_ROOM_HASH";
@@ -187,6 +189,11 @@ public class RoomActivity extends ActionBarActivity {
       @Override
       public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
         openContextMenu(view);
+
+        //        if (i == adapter.GetReadHerePosition()) return;
+        //        TwimptLogData data = adapter.getItem(i);
+        //        AlertDialogFragment dlg = AlertDialogFragment.CreateSelectedDataDialog(data);
+        //        dlg.show(getSupportFragmentManager(), "selected");
       }
     });
     mIconListener = new TwimptIconListener(RoomActivity.this, mImageCacheDB.getTwimptIconTable(), exec);
@@ -206,7 +213,6 @@ public class RoomActivity extends ActionBarActivity {
       Logger.log("update");
     }
     //mSwipeRefreshWidget.setRefreshing(true);
-
 
     registerForContextMenu(mListView);
   }
@@ -377,6 +383,11 @@ public class RoomActivity extends ActionBarActivity {
 
   @Override
   public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+    class ViewHolder {
+      TextView text, name, roomName, time;
+      ImageView icon;
+      GridView mGridView;
+    }
     // コンテキストメニューを作る
     AdapterContextMenuInfo adapterInfo = (AdapterContextMenuInfo) menuInfo;
     ListView listView = (ListView) v;
@@ -385,6 +396,29 @@ public class RoomActivity extends ActionBarActivity {
     TwimptLogData twimptLogData = (TwimptLogData) listView.getItemAtPosition(adapterInfo.position);
     //TwimptLogData twimptLogData = mGlobals.twimptRooms.get(mGlobals.mNowHash).dataList.get(mListViewClickedNum);
     menu.setHeaderTitle(twimptLogData.text);
+    View view = (View) v.getTag();
+    ViewHolder holder;
+    if (view == null) {
+      LayoutInflater inflate = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+      view = inflate.inflate(R.layout.selected_data_popup, null);
+      holder = new ViewHolder();
+      holder.text = (TextView) view.findViewById(R.id.text);
+      holder.name = (TextView) view.findViewById(R.id.name);
+      holder.roomName = (TextView) view.findViewById(R.id.room_name);
+      holder.icon = (ImageView) view.findViewById(R.id.user_image);
+      holder.time = (TextView) view.findViewById(R.id.time);
+      holder.mGridView = (GridView) view.findViewById(R.id.gridImageView);
+      holder.mGridView.setVisibility(View.GONE);
+      view.setTag(holder);
+    } else {
+      holder = (ViewHolder) view.getTag();
+    }
+    holder.icon.setImageDrawable(mIconListener.getDrawable(twimptLogData.icon));
+    holder.text.setText(twimptLogData.decodedText);
+    holder.name.setText(twimptLogData.name);
+    holder.roomName.setText(twimptLogData.roomData.name);
+    holder.time.setText(TimeDiff.toDiffDate(twimptLogData.time));
+    menu.setHeaderView(view);
     //menu.add(0, CONTEXT_MENU.COMMENT.ordinal(), 0, "書き込みにコメントする");
     //String roomName = twimptLogData.roomHash != null ? mGlobals.twimptRooms.get(twimptLogData.roomHash).name : "ひとりごと";
     if (mNowHash.equals("public"))
@@ -420,7 +454,9 @@ public class RoomActivity extends ActionBarActivity {
       //      UpdateRequest();
       Intent intent = new Intent(RoomActivity.this, RoomActivity.class);
       //選択されたログのルームハッシュを送る
-      intent.putExtra(INTENT_ROOM_NAME_HASH, twimptLogData.roomData.hash);
+      String hash = twimptLogData.roomData.hash;
+      if (hash == null) hash = twimptLogData.roomData.type;
+      intent.putExtra(INTENT_ROOM_NAME_HASH, hash);
       startActivity(intent);
       return true;
     }
@@ -678,7 +714,23 @@ public class RoomActivity extends ActionBarActivity {
 
   /** アラートダイアログ */
   public static class AlertDialogFragment extends DialogFragment {
+    private final static String BUNDLE_TWIMPT_LOG_DATA = "TwimptLogData";
+
+    private enum DIALOG {
+      POST_ALERT,
+      SELECTED_DATA,
+    }
+
     public AlertDialogFragment() {
+    }
+
+    public static AlertDialogFragment CreateSelectedDataDialog(TwimptLogData data) {
+      AlertDialogFragment dlg = new AlertDialogFragment();
+      Bundle bundle = new Bundle();
+      bundle.putInt("id", DIALOG.SELECTED_DATA.ordinal());
+      bundle.putSerializable(BUNDLE_TWIMPT_LOG_DATA, data);
+      dlg.setArguments(bundle);
+      return dlg;
     }
 
     public static AlertDialogFragment CreatePostAlert() {
@@ -693,9 +745,10 @@ public class RoomActivity extends ActionBarActivity {
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
       Dialog dialog;
+      Bundle bundle = getArguments();
       AlertDialog.Builder builder;
       DIALOG[] values = DIALOG.values();
-      DIALOG dialogID = values[getArguments().getInt("id")];
+      DIALOG dialogID = values[bundle.getInt("id")];
       switch (dialogID) {
       case POST_ALERT:
         // 確認ダイアログの生成
@@ -713,6 +766,38 @@ public class RoomActivity extends ActionBarActivity {
           public void onClick(DialogInterface dialog, int which) {
           }
         });
+        dialog = builder.create();
+        break;
+      case SELECTED_DATA:
+        Activity activity = getActivity();
+        LayoutInflater inflate = (LayoutInflater) activity.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        View v = inflate.inflate(R.layout.selected_data_popup, null);
+        TextView text = (TextView) v.findViewById(R.id.text);
+        TextView name = (TextView) v.findViewById(R.id.name);
+        TextView roomName = (TextView) v.findViewById(R.id.room_name);
+        ImageView icon = (ImageView) v.findViewById(R.id.user_image);
+        TextView time = (TextView) v.findViewById(R.id.time);
+        GridView mGridView = (GridView) v.findViewById(R.id.gridImageView);
+        mGridView.setVisibility(View.GONE);
+        TwimptLogData data = (TwimptLogData) bundle.getSerializable(BUNDLE_TWIMPT_LOG_DATA);
+        text.setText(data.decodedText);
+        name.setText(data.name);
+        roomName.setText(data.roomData.name);
+
+        builder = new AlertDialog.Builder(getActivity());
+        builder.setTitle(null);
+        builder.setView(v);
+        String[] s = {
+                "test1",
+                "test2"
+        };
+        builder.setItems(s, new DialogInterface.OnClickListener() {
+          @Override
+          public void onClick(DialogInterface dialogInterface, int i) {
+
+          }
+        });
+        builder.setMessage(null);
         dialog = builder.create();
         break;
       default:

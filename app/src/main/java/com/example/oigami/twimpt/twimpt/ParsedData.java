@@ -34,7 +34,7 @@ public class ParsedData {
     mTwimptLogData = new TwimptLogData[log_data_list.length()];
     TwimptLogData.TwimptRoomParseListener listener = new TwimptLogData.TwimptRoomParseListener() {
       @Override
-      public TwimptRoom OnTwimptRoomParse(JSONObject room_data) throws JSONException {
+      public TwimptRoom TwimptRoomParse(JSONObject room_data) throws JSONException {
         TwimptRoom twimptRoom = null;
         if (room_data == null) {
           final String roomDataHash = "monologue";

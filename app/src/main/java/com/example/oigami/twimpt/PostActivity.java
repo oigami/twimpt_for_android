@@ -2,10 +2,14 @@ package com.example.oigami.twimpt;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -21,16 +25,28 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.RemoteViews;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.oigami.twimpt.debug.Logger;
 import com.example.oigami.twimpt.twimpt.ParsedData;
 import com.example.oigami.twimpt.twimpt.TwimptNetwork;
 import com.example.oigami.twimpt.twimpt.room.TwimptRoom;
 import com.example.oigami.twimpt.twimpt.token.AccessTokenData;
+
 import android.support.v7.view.ActionMode;
+
+import org.apache.http.util.ByteArrayBuffer;
+import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.concurrent.ConcurrentHashMap;
 
 
@@ -62,12 +78,7 @@ public class PostActivity extends ActionBarActivity {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.post_activity);
     globals = (DataApplication) this.getApplication();
-    Intent i = getIntent();
-    mNowRoomHash = i.getStringExtra(INTENT_NOW_HASH);
-    mPostRoomHash = i.getStringExtra(INTENT_POST_HASH);
 
-    TwimptRoom twimptRoom = globals.twimptRooms.get(mPostRoomHash);
-    getSupportActionBar().setTitle(twimptRoom.name);
     mPostMessageEdit = (EditText) findViewById(R.id.post_message);
     //mPostMessageEdit.showContextMenu();
     registerForContextMenu(mPostMessageEdit);
@@ -80,12 +91,34 @@ public class PostActivity extends ActionBarActivity {
 
       }
     });
+    if (savedInstanceState != null) {
+      mNowRoomHash = savedInstanceState.getString(INTENT_NOW_HASH);
+      mPostRoomHash = savedInstanceState.getString(INTENT_POST_HASH);
+    } else {
+      Intent i = getIntent();
+      mNowRoomHash = i.getStringExtra(INTENT_NOW_HASH);
+      mPostRoomHash = i.getStringExtra(INTENT_POST_HASH);
+    }
+    TwimptRoom twimptRoom = globals.twimptRooms.get(mPostRoomHash);
+    getSupportActionBar().setTitle(twimptRoom.name);
+
   }
+
+  @Override
+  protected void onSaveInstanceState(Bundle outState) {
+    super.onSaveInstanceState(outState);
+    outState.putString(INTENT_NOW_HASH, mNowRoomHash);
+    outState.putString(INTENT_POST_HASH, mPostRoomHash);
+  }
+
+  private static final int REQUEST_GALLERY = 0;
 
   private enum CONTEXT_MENU {
     CANCEL,
     OMIKUJI,
-    DEFAULT
+    DEFAULT,
+    IMAGE_UPLOAD,
+    IMAGE_PASTE,
   }
 
   @Override
@@ -94,9 +127,10 @@ public class PostActivity extends ActionBarActivity {
     //menu.clear();
     menu.setHeaderTitle(null);
     menu.add(0, CONTEXT_MENU.OMIKUJI.ordinal(), 0, R.string.insert_lottery_command);
-    menu.add(0, CONTEXT_MENU.DEFAULT.ordinal(), 0, "テキストの選択");
+    // menu.add(0, CONTEXT_MENU.DEFAULT.ordinal(), 0, "テキストの選択");
+    menu.add(0, CONTEXT_MENU.IMAGE_UPLOAD.ordinal(), 0, R.string.image_upload);
+    menu.add(0, CONTEXT_MENU.IMAGE_PASTE.ordinal(), 0, R.string.image_paste);
     menu.add(0, CONTEXT_MENU.CANCEL.ordinal(), 0, R.string.cancel);
-
     super.onCreateContextMenu(menu, v, menuInfo);
   }
 
@@ -113,46 +147,72 @@ public class PostActivity extends ActionBarActivity {
       return true;
     case DEFAULT:
       //TODO 仕様が微妙なので処理方法を考える
-      startSupportActionMode(new ActionMode.Callback() {
-        @Override
-        public boolean onCreateActionMode(ActionMode actionMode, Menu menu) {
-          // Inflate our menu from a resource file
-        //  actionMode.getMenuInflater().inflate(R.menu.edit_text, menu);
-          menu.add(0,android.R.id.paste,0,"");
-          menu.add(0,android.R.id.cut,0,"");
-          menu.add(0,android.R.id.copy,0,"");
-          // Return true so that the action mode is shown
-          return true;
-        }
-
-        @Override
-        public boolean onPrepareActionMode(ActionMode actionMode, Menu menu) {
-          // As we do not need to modify the menu before displayed, we return false.
-          return false;
-        }
-
-        @Override
-        public boolean onActionItemClicked(ActionMode actionMode, MenuItem menuItem) {
-          // Similar to menu handling in Activity.onOptionsItemSelected()
-
-          return false;
-        }
-
-        @Override
-        public void onDestroyActionMode(ActionMode actionMode) {
-          // Allows you to be notified when the action mode is dismissed
-        }
-      });
       //mPostMessageEdit.startActionMode(mPostMessageEdit.getCustomSelectionActionModeCallback());
       // unregisterForContextMenu(mPostMessageEdit);
       //mPostMessageEdit.selectAll();
       //mPostMessageEdit.performLongClick();
       //registerForContextMenu(mPostMessageEdit);
       return true;
+    case IMAGE_PASTE:
+
+      return true;
+    case IMAGE_UPLOAD:
+      Intent intent = new Intent();
+      intent.setType("image/*");
+      intent.setAction(Intent.ACTION_GET_CONTENT);
+      startActivityForResult(intent, REQUEST_GALLERY);
+      return true;
     default:
       Toast.makeText(this, "エラー", Toast.LENGTH_LONG).show();
       return super.onContextItemSelected(item);
     }
+  }
+
+  @Override
+  protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    if (requestCode != REQUEST_GALLERY || resultCode != RESULT_OK) return;
+    try {
+      Uri uri = data.getData();
+      File file = new File(uri.getPath());
+      int length = (int) file.length();
+      InputStream in = getContentResolver().openInputStream(data.getData());
+      byte[] buf = new byte[length];
+      in.read(buf);
+      in.close();
+      ImageUpload(buf);
+    } catch (FileNotFoundException e) {
+      e.printStackTrace();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+  }
+
+  void ImageUpload(final byte[] imageBuf) {
+    NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+    Notification notify = new Notification();
+    Intent intent = new Intent(this, PostActivity.class);
+    PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), 0, intent, 0);
+    notify.flags = Notification.FLAG_ONGOING_EVENT;
+    notify.tickerText = "画像アップロード中";
+    notify.contentIntent=pendingIntent;
+    notify.contentView = new RemoteViews(getApplicationContext().getPackageName(), R.layout.download_progress);
+    notify.contentView.setProgressBar(R.id.status_progress, imageBuf.length, 0, false);
+
+    manager.notify(R.string.app_name, notify);
+    if (true) return;
+    new Thread(new Runnable() {
+      @Override
+      public void run() {
+        try {
+          JSONObject json = TwimptNetwork.ImageUploadRequest(imageBuf);
+        } catch (IOException e) {
+          e.printStackTrace();
+        } catch (JSONException e) {
+          e.printStackTrace();
+        }
+
+      }
+    }).start();
   }
 
   void PostRequest() {
@@ -232,7 +292,7 @@ public class PostActivity extends ActionBarActivity {
       //inflate.inflate(R.layout.lottery_setting_popup, null);
       final View view = inflate.inflate(R.layout.lottery_setting_popup, null);
       final SharedPreferences sharedPref = This.getSharedPreferences("lottery", MODE_PRIVATE);
-      final String checkboxStr[] = {"omikuji", "meshi", "seiyu", "precure", "pokemon", "lovelive","monhan" ,"imas" ,"aikatsu"};
+      final String checkboxStr[] = {"omikuji", "meshi", "seiyu", "precure", "pokemon", "lovelive", "monhan", "imas", "aikatsu"};
       final CheckBox checkBox[] = new CheckBox[checkboxStr.length];
       for (int i = 0; i < checkboxStr.length; ++i) {
         int viewId = getResources().getIdentifier(checkboxStr[i], "id", This.getPackageName());

@@ -1,10 +1,11 @@
 package com.example.oigami.twimpt.twimpt;
 
 
+import android.util.Base64;
+
 import com.example.oigami.twimpt.BuildConfig;
 import com.example.oigami.twimpt.debug.Logger;
 
-import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -29,11 +30,13 @@ import java.util.List;
 public class TwimptNetwork {
 
   private static final String TWIMPT_API_URL = "http://api.twimpt.com/";
+  private static final String TWIMPT_TWIST_URL = "http://twist.twimpt.com/";
 
   private static JSONObject Request(HttpRequestBase request) throws IOException, JSONException {
 
     DefaultHttpClient client = new DefaultHttpClient();
     final HttpResponse response = client.execute(request);
+
     // レスポンスヘッダーの取得(ファイルが無かった場合などは404)
     Logger.log("StatusCode=" + response.getStatusLine().getStatusCode());
 
@@ -48,15 +51,16 @@ public class TwimptNetwork {
     return out_json;
   }
 
-  private static JSONObject HttpPostRequest(final List<NameValuePair> postParam, final String url) throws IOException, JSONException {
+  private static JSONObject HttpPostRequest(final List<NameValuePair> postParam, final String url)
+          throws IOException, JSONException {
     Logger.log(url);
     HttpPost request = new HttpPost(url);
     // 送信パラメータのエンコードを指定
     if (postParam != null)
       request.setEntity(new UrlEncodedFormEntity(postParam, "UTF-8"));
     if (BuildConfig.DEBUG) {
-      StringWriter sw=new StringWriter();
-      for (NameValuePair pair:postParam){
+      StringWriter sw = new StringWriter();
+      for (NameValuePair pair : postParam) {
         sw.append(pair.getName());
         sw.append(':');
         sw.append(pair.getValue());
@@ -88,7 +92,11 @@ public class TwimptNetwork {
    * @throws JSONException
    * @throws IOException
    */
-  public static JSONObject PostRequest(final String accessToken, final String accessTokenSecret, final String postType, final String postHash, final String message, final String updateType, final String updateHash, final String latestLogHash, final String latestModifyHash) throws JSONException, IOException {
+  public static JSONObject PostRequest(final String accessToken, final String accessTokenSecret,
+                                       final String postType, final String postHash, final String message,
+                                       final String updateType, final String updateHash,
+                                       final String latestLogHash, final String latestModifyHash)
+          throws JSONException, IOException {
     // POSTパラメータ付きでPOSTリクエストを構築
     List<NameValuePair> post_params = new ArrayList<NameValuePair>();
     post_params.add(new BasicNameValuePair("access_token", accessToken));
@@ -117,7 +125,9 @@ public class TwimptNetwork {
    * @throws JSONException
    * @throws IOException
    */
-  public static JSONObject UpdateRequest(final String updateType, final String updateHash, final String latestLogHash, final String latestModifyHash) throws JSONException, IOException {
+  public static JSONObject UpdateRequest(final String updateType, final String updateHash,
+                                         final String latestLogHash, final String latestModifyHash)
+          throws JSONException, IOException {
     List<NameValuePair> post_params = new ArrayList<NameValuePair>();
     post_params.add(new BasicNameValuePair("update_type", updateType));
     post_params.add(new BasicNameValuePair("update_hashes", updateHash));
@@ -138,7 +148,8 @@ public class TwimptNetwork {
    * @throws JSONException
    * @throws IOException
    */
-  public static JSONObject LogRequest(final String updateType, final String updateHash, final String oldestLogHash) throws JSONException, IOException {
+  public static JSONObject LogRequest(final String updateType, final String updateHash,
+                                      final String oldestLogHash) throws JSONException, IOException {
     ArrayList<NameValuePair> post_params = new ArrayList<NameValuePair>();
     post_params.add(new BasicNameValuePair("update_type", updateType));
     post_params.add(new BasicNameValuePair("update_hashes", updateHash));
@@ -146,6 +157,12 @@ public class TwimptNetwork {
     return HttpPostRequest(post_params, TWIMPT_API_URL + "logs/log");
   }
 
+  public static JSONObject ImageUploadRequest(byte[] imageBuf) throws IOException, JSONException {
+    ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
+    String encodedImageData = Base64.encodeToString(imageBuf, Base64.NO_WRAP);
+    params.add(new BasicNameValuePair("file_content", encodedImageData));
+    return HttpPostRequest(params, TWIMPT_API_URL + "files/upload");
+  }
   /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                                       部屋情報関連
    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -154,7 +171,6 @@ public class TwimptNetwork {
     DefaultHttpClient client = new DefaultHttpClient();
     HttpGet request = new HttpGet(TWIMPT_API_URL + "rooms/recent/" + url + "/" + pageNum);
     final HttpResponse response = client.execute(request);
-    // レスポンスヘッダーの取得(ファイルが無かった場合などは404)
     Logger.log("StatusCode=" + response.getStatusLine().getStatusCode());
     HttpEntity entity = response.getEntity();
     if (entity == null)
@@ -183,7 +199,8 @@ public class TwimptNetwork {
                                           認証関連
    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-  public static JSONObject GetRequestToken(String apiKey, String apiKeySecret) throws IOException, JSONException {
+  public static JSONObject GetRequestToken(String apiKey, String apiKeySecret)
+          throws IOException, JSONException {
     ArrayList<NameValuePair> post_params = new ArrayList<NameValuePair>();
     post_params.add(new BasicNameValuePair("api_key", apiKey));
     post_params.add(new BasicNameValuePair("api_key_secret", apiKeySecret));
@@ -197,7 +214,7 @@ public class TwimptNetwork {
    * @return 認証するためのurl文字列
    */
   public static String GetAuthURL(String apiID, String requestToken, String requestTokenSecret) {
-    return "http://twist.twimpt.com/authorize/" + apiID +
+    return TWIMPT_TWIST_URL + "authorize/" + apiID +
            "/?request_token=" + requestToken + "&request_token_secret=" + requestTokenSecret;
   }
 
@@ -217,7 +234,7 @@ public class TwimptNetwork {
   /**
    * idを使って最新ログを取得するときのみ使う
    * 一度呼んだ後は戻ってきたjsonの中のhashを使って最新ログを取得する
-   * @param type "room" or "user" or "log" or etc...
+   * @param type "room" or "user" or "log"
    * @param id   webのurlに使われているid
    * @return jsonデータ
    * @throws IOException
@@ -249,9 +266,9 @@ public class TwimptNetwork {
    */
   public static String GetWebPage(String type, String id) {
     if (type.equals("public") || type.equals("monologue")) {
-      return ("http://twist.twimpt.com/" + type);
+      return (TWIMPT_TWIST_URL + type);
     } else {
-      return ("http://twist.twimpt.com/" + type + "/" + id);
+      return (TWIMPT_TWIST_URL + type + "/" + id);
     }
   }
 }
