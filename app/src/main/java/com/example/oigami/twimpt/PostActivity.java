@@ -15,11 +15,11 @@ import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.v4.app.DialogFragment;
+import android.support.v4.app.NotificationCompat;
 import android.support.v7.app.ActionBarActivity;
 import android.text.Editable;
 import android.view.ContextMenu;
 import android.view.LayoutInflater;
-import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -35,14 +35,9 @@ import com.example.oigami.twimpt.twimpt.TwimptNetwork;
 import com.example.oigami.twimpt.twimpt.room.TwimptRoom;
 import com.example.oigami.twimpt.twimpt.token.AccessTokenData;
 
-import android.support.v7.view.ActionMode;
-
-import org.apache.http.util.ByteArrayBuffer;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -189,22 +184,28 @@ public class PostActivity extends ActionBarActivity {
 
   void ImageUpload(final byte[] imageBuf) {
     NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-    Notification notify = new Notification();
     Intent intent = new Intent(this, PostActivity.class);
-    PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), 0, intent, 0);
-    notify.flags = Notification.FLAG_ONGOING_EVENT;
-    notify.tickerText = "画像アップロード中";
-    notify.contentIntent=pendingIntent;
-    notify.contentView = new RemoteViews(getApplicationContext().getPackageName(), R.layout.download_progress);
-    notify.contentView.setProgressBar(R.id.status_progress, imageBuf.length, 0, false);
-
-    manager.notify(R.string.app_name, notify);
+    PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
+    final NotificationCompat.Builder builder = new NotificationCompat.Builder(getApplicationContext());
+    builder.setContentIntent(pendingIntent);
+    builder.setWhen(System.currentTimeMillis());
+    builder.setSmallIcon(R.drawable.ic_launcher);
+    builder.setProgress(100, 0, false);
+    // ステータスバーに表示されるテキスト
+    builder.setTicker("Ticker");
+    // Notificationを開いたときに表示されるタイトル
+    builder.setContentTitle("ContentTitle");
+    // Notificationを開いたときに表示されるサブタイトル
+    builder.setContentText("ContentText");
+    final Notification notification = builder.build();
+    manager.notify(0, notification);
     if (true) return;
     new Thread(new Runnable() {
       @Override
       public void run() {
         try {
           JSONObject json = TwimptNetwork.ImageUploadRequest(imageBuf);
+          Logger.log(json.toString(2));
         } catch (IOException e) {
           e.printStackTrace();
         } catch (JSONException e) {
