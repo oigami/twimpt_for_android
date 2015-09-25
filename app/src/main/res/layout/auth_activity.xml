@@ -10,7 +10,7 @@
         android:layout_width="wrap_content"
         android:layout_height="20dp"
         android:text="@string/auth_show_browser_message"
-        android:id="@+id/textView"
+        android:id="@+id/auth_show_browser_textview"
         android:layout_gravity="center_horizontal"/>
 
     <Button
@@ -19,5 +19,13 @@
         android:text="@string/auth_show_browser"
         android:id="@+id/auth_url_button"
         android:layout_gravity="center_horizontal"/>
+
+<TextView
+    android:layout_margin="10dp"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:id="@+id/auth_log_edittext"
+    android:gravity="top|left"
+    android:textIsSelectable="true"/>
 
 </LinearLayout>

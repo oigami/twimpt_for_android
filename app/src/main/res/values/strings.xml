@@ -41,8 +41,10 @@
     <string name="auth_success">認証に成功しました</string>
     <string name="auth_show_browser_message">認証画面を開いて認証します</string>
     <string name="auth_show_browser">認証画面を開く</string>
+    <string name="now_auth_preparation">認証準備中</string>
     <string name="update_network_error">ネットワークにつながっているか確認して下さい</string>
     <string name="confirmation_post_to_public">"ひとりごとに投稿しますが、\nよろしいですか？"</string>
     <string name="censored">禁則事項です</string>
+    <!--<string name="now_auth_confirmation">認証確認中</string>-->
 
 </resources>

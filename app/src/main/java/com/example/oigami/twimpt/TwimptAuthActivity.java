@@ -1,11 +1,17 @@
 package com.example.oigami.twimpt;
 
-import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.Dialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.annotation.NonNull;
+import android.support.v4.app.DialogFragment;
+import android.support.v7.app.ActionBarActivity;
 import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.oigami.twimpt.debug.Logger;
@@ -15,39 +21,52 @@ import com.example.oigami.twimpt.twimpt.token.RequestTokenData;
 
 import org.json.JSONObject;
 
+import java.util.Arrays;
+
 /**
  * Created by oigami on 2014/10/05
  */
-public class TwimptAuthActivity extends Activity {
+public class TwimptAuthActivity extends ActionBarActivity {
 
-  boolean mNowUpdate = false;
-  Handler mHandler = new Handler();
-  View button;
+  private boolean mNowUpdate = false;
+  private boolean mustBootBrowser = false;
+  private Handler mHandler = new Handler();
+  private View button;
+  private TextView text;
+  private RequestTokenData requestTokenData;
+  private AlertDialogFragment dlg;
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.auth_activity);
     button = findViewById(R.id.auth_url_button);
+    text = (TextView) findViewById(R.id.auth_log_edittext);
     RequestTokenData requestTokenData = TwimptToken.GetRequestToken(this);
     if (requestTokenData == null) {
-      AuthRequest();
-      button.setEnabled(false);
+      GetRequestToken();
     }
 
     button.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
-        AuthRequest();
+        GetRequestToken();
         v.setEnabled(false);
-        // クリック時の処理
-        //        RequestTokenData requestToken = TwimptToken.GetRequestToken(TwimptAuthActivity.this);
-        //        Uri uri = Uri.parse(Twimpt.GetAuthURL(AUTH_ID, requestToken.token, requestToken.secret));
-        //        Intent i = new Intent(Intent.ACTION_VIEW, uri);
-        //        startActivity(i);
-
       }
     });
+  }
+
+  private void AppendLog(String string) {
+    text.append(string);
+  }
+
+  private void AppendLogln(String string) {
+    text.append(string + "\n");
+  }
+
+  @Override
+  protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    assert false;
   }
 
   @Override
@@ -55,26 +74,94 @@ public class TwimptAuthActivity extends Activity {
     super.onStart();
     Intent intent = getIntent();
     if (Intent.ACTION_VIEW.equals(intent.getAction())) {//intentによって起動
-      CheckAuth();
+      GetAccessToken();
     }
   }
 
-  public void AuthRequest() {
+  @Override
+  public void onResume() {
+    super.onResume();
+    if (mustBootBrowser && dlg == null) {
+      mHandler.post(new Runnable() {
+        @Override
+        public void run() {
+          AppendLog("\t...停止中");
+          dlg = AlertDialogFragment.CreateWarningDialog();
+          dlg.show(getSupportFragmentManager(), "tag");
+        }
+      });
+    }
+  }
+
+  @Override
+  public void onPause() {
+    super.onPause();
+  }
+
+  public static class AlertDialogFragment extends DialogFragment {
+    public AlertDialogFragment() {
+    }
+
+    public static AlertDialogFragment CreateWarningDialog() {
+      AlertDialogFragment dlg = new AlertDialogFragment();
+      Bundle bundle = new Bundle();
+      dlg.setArguments(bundle);
+      return dlg;
+    }
+
+    @NonNull
+    @Override
+    public Dialog onCreateDialog(Bundle savedInstanceState) {
+      TwimptAuthActivity This = ((TwimptAuthActivity) getActivity());
+      return WarningDialog(This);
+    }
+
+    private Dialog WarningDialog(final TwimptAuthActivity This) {
+      final AlertDialog.Builder dlgBuilder = new AlertDialog.Builder(This)
+              .setTitle("ブラウザによる認証の途中")
+              .setMessage("認証を続けますか？\n「はい」を押すとブラウザが起動します");
+      dlgBuilder.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
+        @Override
+        public void onClick(DialogInterface dialog, int which) {
+          This.dlg = null;
+          This.AppendLogln("\t...再開");
+          This.GoAuthWebPage();
+        }
+      });
+      dlgBuilder.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+        @Override
+        public void onClick(DialogInterface dialog, int which) {
+          This.dlg = null;
+          This.AppendLogln("\t...中止");
+          This.mustBootBrowser = false;
+        }
+      });
+      final Dialog dlg = dlgBuilder.create();
+      // ダイアログの外側をタッチしても閉じない様にする
+      dlg.setCanceledOnTouchOutside(false);
+      return dlg;
+    }
+  }
+
+  public void GetRequestToken() {
     if (mNowUpdate) return;
     mNowUpdate = true;
+    button.setEnabled(false);
+    AppendLog("request_tokenの取得");
     new Thread(new Runnable() {
       @Override
       public void run() {
         try {
           final JSONObject json = TwimptNetwork.GetRequestToken(TwimptDeveloperData.API_KEY, TwimptDeveloperData.API_KEY_SECRET);
           Logger.log(json.toString(2));
-          final RequestTokenData requestTokenData = new RequestTokenData(json);
+          requestTokenData = new RequestTokenData(json);
           mHandler.post(new Runnable() {
             @Override
             public void run() {
+              AppendLogln("\t...成功");
               button.setEnabled(true);
               TwimptToken.SetRequestToken(TwimptAuthActivity.this, requestTokenData);
-              GoAuthWebPage(requestTokenData);
+              GoAuthWebPage();
             }
           });
         } catch (final Exception e) {
@@ -82,7 +169,8 @@ public class TwimptAuthActivity extends Activity {
           mHandler.post(new Runnable() {
             @Override
             public void run() {
-              Toast.makeText(TwimptAuthActivity.this, e.getMessage() + "\n\n" + Logger.getStackTraceString(e), Toast.LENGTH_LONG).show();
+              button.setEnabled(true);
+              AppendLogln("\t...失敗:\n" + e.getMessage() + "\n\n" + Logger.getStackTraceString(e));
             }
           });
         }
@@ -91,9 +179,11 @@ public class TwimptAuthActivity extends Activity {
     }).start();
   }
 
-  private void CheckAuth() {
+  private void GetAccessToken() {
     if (mNowUpdate) return;
     mNowUpdate = true;
+    button.setEnabled(false);
+    AppendLog("access_tokenの取得");
     new Thread(new Runnable() {
       @Override
       public void run() {
@@ -105,6 +195,8 @@ public class TwimptAuthActivity extends Activity {
             @Override
             public void run() {
               TwimptToken.SetAccessToken(TwimptAuthActivity.this, accessTokenData);
+              button.setEnabled(true);
+              AppendLogln("\t...成功");
               StartRoomActivity();
             }
           });
@@ -113,7 +205,8 @@ public class TwimptAuthActivity extends Activity {
           mHandler.post(new Runnable() {
             @Override
             public void run() {
-              Toast.makeText(TwimptAuthActivity.this, e.getMessage() + "\n\n" + e.getStackTrace(), Toast.LENGTH_LONG).show();
+              button.setEnabled(true);
+              AppendLogln("\t...失敗:\n" + e.getMessage() + "\n\n" + Arrays.toString(e.getStackTrace()));
             }
           });
         }
@@ -121,13 +214,17 @@ public class TwimptAuthActivity extends Activity {
     }).start();
   }
 
-  private void GoAuthWebPage(RequestTokenData requestTokenData) {
+  private void GoAuthWebPage() {
+    assert requestTokenData != null;
+    AppendLog("認証ページに移動");
+    mustBootBrowser = true;
     Uri uri = Uri.parse(TwimptNetwork.GetAuthURL(TwimptDeveloperData.AUTH_ID, requestTokenData.token, requestTokenData.secret));
     Intent i = new Intent(Intent.ACTION_VIEW, uri);
     startActivity(i);
   }
 
   private void StartRoomActivity() {
+    Toast.makeText(this, R.string.auth_success, Toast.LENGTH_LONG).show();
     Intent intent = new Intent(this, RoomActivity.class);
     intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
     startActivity(intent);
