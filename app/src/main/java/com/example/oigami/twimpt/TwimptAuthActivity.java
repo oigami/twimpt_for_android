@@ -28,13 +28,13 @@ public class TwimptAuthActivity extends Activity {
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.auth_activity);
+    button = findViewById(R.id.auth_url_button);
     RequestTokenData requestTokenData = TwimptToken.GetRequestToken(this);
     if (requestTokenData == null) {
       AuthRequest();
       button.setEnabled(false);
     }
 
-    button = findViewById(R.id.auth_url_button);
     button.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
