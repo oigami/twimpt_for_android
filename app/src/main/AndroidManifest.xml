@@ -69,6 +69,7 @@
 
                 <data
                     android:scheme="twimpt"
+                    android:host="com.example.twimpt"
                     android:path="/"/>
             </intent-filter>
         </activity>
