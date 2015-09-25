@@ -1,40 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
     <string name="app_name">twimpt</string>
+
     <string name="room_list_name">ルーム一覧</string>
-    <string name="hello_world">Hello world!</string>
     <string name="action_deauth">認証解除</string>
     <string name="action_auth">認証</string>
     <string name="post_request">投稿</string>
     <string name="update_request">更新</string>
-    <string name="public_name">パブリック</string>
-    <string name="monologue_name">ひとりごと</string>
-    <string name="recent_created_name">最近新しく作られた話題</string>
-    <string name="recent_posted_name">最近投稿のあった話題</string>
-    <string name="recent_opened_name">最近開いた話題</string>
-    <string name="open_official_now_page">公式ページで開く</string>
     <string name="setting">設定</string>
+    <string name="insert">挿入</string>
+    <string name="updating">更新中</string>
+    <string name="confirmation">確認</string>
     <string name="yes">はい</string>
     <string name="no">いいえ</string>
     <string name="cancel">キャンセル</string>
-    <string name="load_log">更に前の投稿を読み込む</string>
+
+    <string name="image_upload">画像のアップロード</string>
+    <string name="image_paste">画像の貼り付け</string>
+    <string name="open_official_now_page">公式ページで開く</string>
     <string name="open_room">ルームを開く</string>
     <string name="write_room">ルームに書き込み</string>
+    <string name="open_user_room">ユーザールームを開く</string>
+    <string name="open_id_room">IDでルームを開く</string>
+    <string name="insert_lottery_command">くじ引きコマンドの挿入</string>
+
+    <string name="public_name">パブリック</string>
+    <string name="monologue_name">ひとりごと</string>
+
+    <string name="recent_created_name">最近新しく作られた話題</string>
+    <string name="recent_posted_name">最近投稿のあった話題</string>
+    <string name="recent_opened_name">最近開いた話題</string>
+
+    <string name="load_log">更に前の投稿を読み込む</string>
+    <string name="read_here">ここまで読んだ</string>
+
     <string name="encourage_auth">メニューから認証してください</string>
     <string name="authenticated">すでに認証しています</string>
     <string name="not_authenticated">認証されていません</string>
     <string name="authenticated_release">認証を解除しました</string>
+    <string name="auth_success">認証に成功しました</string>
+    <string name="auth_show_browser_message">認証画面を開いて認証します</string>
+    <string name="auth_show_browser">認証画面を開く</string>
     <string name="update_network_error">ネットワークにつながっているか確認して下さい</string>
-    <string name="updating">更新中</string>
-    <string name="confirmation">確認</string>
     <string name="confirmation_post_to_public">"ひとりごとに投稿しますが、\nよろしいですか？"</string>
-    <string name="insert_lottery_command">くじ引きコマンドの挿入</string>
-    <string name="insert">挿入</string>
     <string name="censored">禁則事項です</string>
-    <string name="open_user_room">ユーザールームを開く</string>
-    <string name="open_id_room">IDでルームを開く</string>
-    <string name="image_upload">画像のアップロード</string>
-    <string name="image_paste">画像の貼り付け</string>
-    <string name="read_here">ここまで読んだ</string>
+
 </resources>

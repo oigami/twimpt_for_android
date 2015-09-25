@@ -9,14 +9,14 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="20dp"
-        android:text="認証画面を開いて認証します"
+        android:text="@string/auth_show_browser_message"
         android:id="@+id/textView"
         android:layout_gravity="center_horizontal"/>
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="認証画面を開く"
+        android:text="@string/auth_show_browser"
         android:id="@+id/auth_url_button"
         android:layout_gravity="center_horizontal"/>
 
