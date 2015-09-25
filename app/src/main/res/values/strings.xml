@@ -36,4 +36,5 @@
     <string name="open_id_room">IDでルームを開く</string>
     <string name="image_upload">画像のアップロード</string>
     <string name="image_paste">画像の貼り付け</string>
+    <string name="read_here">ここまで読んだ</string>
 </resources>

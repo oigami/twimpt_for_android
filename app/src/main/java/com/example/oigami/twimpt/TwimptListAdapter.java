@@ -11,6 +11,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.text.Spannable;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -130,6 +131,37 @@ public class TwimptListAdapter extends BaseAdapter {
   }
 
   private class ViewHolder {
+    ViewHolder(View v) {
+      linkListener = new TextLinkListener();
+
+      text = (TextView) v.findViewById(R.id.text);
+      name = (TextView) v.findViewById(R.id.name);
+      roomName = (TextView) v.findViewById(R.id.room_name);
+      icon = (ImageView) v.findViewById(R.id.user_image);
+      time = (TextView) v.findViewById(R.id.time);
+      mGridView = (GridView) v.findViewById(R.id.gridImageView);
+      mGridView.setOnItemClickListener(mImageClickListener);
+    }
+
+    private void SetVisibility(int visibility) {
+      name.setVisibility(visibility);
+      roomName.setVisibility(visibility);
+      icon.setVisibility(visibility);
+      time.setVisibility(visibility);
+      mGridView.setVisibility(visibility);
+    }
+
+    void SetReadHereMode() {
+      SetVisibility(View.GONE);
+      text.setText(R.string.read_here);
+      text.setGravity(Gravity.CENTER);
+    }
+
+    void SetDataMode() {
+      SetVisibility(View.VISIBLE);
+      text.setGravity(Gravity.LEFT);
+    }
+
     TextLinkListener linkListener;
     TextView text, name, roomName, time;
     ImageView icon;
@@ -138,34 +170,24 @@ public class TwimptListAdapter extends BaseAdapter {
 
   @Override
   public View getView(int position, View convertView, ViewGroup parent) {
-    final TwimptLogData twimptLogData = (TwimptLogData) getItem(position);
+    final TwimptLogData twimptLogData = getItem(position);
+    //ログの場合
+    View v = convertView;
+    // ビューホルダー
+    ViewHolder holder;
+    // 登録されているモノを使う
+    if (v != null) {
+      holder = (ViewHolder) v.getTag();
+      assert holder != null;
+    } else {
+      LayoutInflater inflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+      v = inflater.inflate(R.layout.list_view, null);
+      holder = new ViewHolder(v);
+      // ビューにホルダーを登録する
+      v.setTag(holder);
+    }
     if (twimptLogData != null) {
-      //ログの場合
-      View v = convertView;
-      // ビューホルダー
-      final ViewHolder holder;
-      // 無い場合だけ作る
-      int id = v == null ? 0 : v.getId();
-      if (v == null || id != R.layout.list_view) {
-        LayoutInflater inflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        v = inflater.inflate(R.layout.list_view, null);
-        holder = new ViewHolder();
-        holder.text = (TextView) v.findViewById(R.id.text);
-        holder.linkListener = new TextLinkListener();
-
-        holder.name = (TextView) v.findViewById(R.id.name);
-        holder.roomName = (TextView) v.findViewById(R.id.room_name);
-        holder.icon = (ImageView) v.findViewById(R.id.user_image);
-        holder.time = (TextView) v.findViewById(R.id.time);
-        holder.mGridView = (GridView) v.findViewById(R.id.gridImageView);
-        holder.mGridView.setOnItemClickListener(mImageClickListener);
-
-        // ビューにホルダーを登録する
-        v.setTag(holder);
-      } else {
-        // 登録されているモノを使う
-        holder = (ViewHolder) v.getTag();
-      }
+      holder.SetDataMode();
       Spannable text = twimptLogData.decodedText;
       if (text == null) {
         // logData.rawText += "\n<a href=\"http://twimpt.com/upload/original/20150110/CGMIadXM.png\" data-lightbox=\"uploaded-image\">test</a>";
@@ -222,14 +244,8 @@ public class TwimptListAdapter extends BaseAdapter {
       downloader.Download();
       return v;//通常のログデータのviewを返す
     }
-      //「ここまで読んだ」タグの場合
-      int id = convertView == null ? 0 : convertView.getId();
-      if (convertView == null || id != R.layout.read_here) {
-        LayoutInflater inflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        convertView = inflater.inflate(R.layout.read_here, null);
-      }
-      return convertView;
-
+    holder.SetReadHereMode();
+    return v;
   }
 
   /**
