@@ -4,3 +4,10 @@
 /.idea/libraries
 .DS_Store
 /build
+manifest-merger-release-report.txt
+TwimptDeveloperData.java
+app/libs
+*.jks
+*.keystore
+*.apk
+release.gradle

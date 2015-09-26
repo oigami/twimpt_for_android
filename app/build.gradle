@@ -1,6 +1,7 @@
 apply plugin: 'com.android.application'
 
 android {
+    apply from: 'release.gradle', to: android
 
     compileSdkVersion 22
     buildToolsVersion '23.0.1'
@@ -10,6 +11,7 @@ android {
         targetSdkVersion 15
         versionCode 3
         versionName "1.0.3"
+        signingConfig signingConfigs.config
     }
     buildTypes {
         release {
