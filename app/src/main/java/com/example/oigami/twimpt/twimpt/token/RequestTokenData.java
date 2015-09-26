@@ -13,7 +13,7 @@ public class RequestTokenData {
 
   public RequestTokenData(JSONObject json) throws JSONException, TwimptNetException {
     if (!json.isNull("error_code")) {
-      throw new TwimptNetException("error_code:" + json.getInt("error_code") + "\n" + json.getString("error_params"));
+      throw new TwimptNetException("error_code:" + json.getInt("error_code") + "\n" + "error_type:" + json.getString("error_type"));
     }
     token = json.getString("request_token");
     secret = json.getString("request_token_secret");
