@@ -1,28 +1,25 @@
 package com.example.oigami.twimpt.twimpt;
 
 
+import android.content.ContentValues;
 import android.util.Base64;
 
-import com.example.oigami.twimpt.BuildConfig;
 import com.example.oigami.twimpt.debug.Logger;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpRequestBase;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.util.EntityUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.List;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by oigami on 2014/09/30
@@ -32,43 +29,57 @@ public class TwimptNetwork {
   private static final String TWIMPT_API_URL = "http://api.twimpt.com/";
   private static final String TWIMPT_TWIST_URL = "http://twist.twimpt.com/";
 
-  private static JSONObject Request(HttpRequestBase request) throws IOException, JSONException {
+  private static String ConvertInputStreamToString(InputStream is) throws IOException {
+    InputStreamReader reader = new InputStreamReader(is);
+    StringBuilder builder = new StringBuilder();
+    char[] buf = new char[1024];
+    int numRead;
+    while (0 <= (numRead = reader.read(buf))) {
+      builder.append(buf, 0, numRead);
+    }
+    return builder.toString();
+  }
 
-    DefaultHttpClient client = new DefaultHttpClient();
-    final HttpResponse response = client.execute(request);
-
-    // レスポンスヘッダーの取得(ファイルが無かった場合などは404)
-    Logger.log("StatusCode=" + response.getStatusLine().getStatusCode());
-
-    HttpEntity entity = response.getEntity();
-    JSONObject out_json;
-    if (entity == null)
-      return null;
-    String str = EntityUtils.toString(entity);
+  private static JSONObject Request(HttpURLConnection con) throws IOException, JSONException {
+    String str = ConvertInputStreamToString(con.getInputStream());
     Logger.log(str);
-    out_json = new JSONObject(str);
+    JSONObject out_json = new JSONObject(str);
     Logger.log(out_json.toString(2));
     return out_json;
   }
 
-  private static JSONObject HttpPostRequest(final List<NameValuePair> postParam, final String url)
-          throws IOException, JSONException {
-    Logger.log(url);
-    HttpPost request = new HttpPost(url);
-    // 送信パラメータのエンコードを指定
-    if (postParam != null)
-      request.setEntity(new UrlEncodedFormEntity(postParam, "UTF-8"));
-    if (BuildConfig.DEBUG) {
-      StringWriter sw = new StringWriter();
-      for (NameValuePair pair : postParam) {
-        sw.append(pair.getName());
-        sw.append(':');
-        sw.append(pair.getValue());
-        sw.append('\n');
-      }
-      Logger.log(sw.toString());
+  private static String CreatePostParameter(ContentValues postParam) {
+    Set<Map.Entry<String, Object>> s = postParam.valueSet();
+    Iterator itr = s.iterator();
+    Map.Entry me = (Map.Entry) itr.next();
+    StringBuilder postStr = new StringBuilder();
+    postStr.append(me.getKey()).append('=').append(me.getValue());
+    while (itr.hasNext()) {
+      me = (Map.Entry) itr.next();
+      postStr.append('&').append(me.getKey()).append('=').append(me.getValue());
     }
-    return Request(request);
+    Logger.log(postStr.toString());
+    return postStr.toString();
+  }
+
+  private static JSONObject HttpPostRequest(final ContentValues postParam, final String urlStr)
+          throws IOException, JSONException {
+    Logger.log(urlStr);
+    URL url = new URL(urlStr);
+    HttpURLConnection con = (HttpURLConnection) url.openConnection();
+
+    con.setRequestMethod("POST");
+    // 送信パラメータのエンコードを指定
+    if (postParam != null) {
+      con.setDoOutput(true);
+      String postStr = CreatePostParameter(postParam);
+      OutputStream os = con.getOutputStream();
+      BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
+      writer.write(postStr);
+      writer.close();
+    }
+
+    return Request(con);
   }
 
   /**
@@ -98,16 +109,16 @@ public class TwimptNetwork {
                                        final String latestLogHash, final String latestModifyHash)
           throws JSONException, IOException {
     // POSTパラメータ付きでPOSTリクエストを構築
-    List<NameValuePair> post_params = new ArrayList<NameValuePair>();
-    post_params.add(new BasicNameValuePair("access_token", accessToken));
-    post_params.add(new BasicNameValuePair("access_token_secret", accessTokenSecret));
-    post_params.add(new BasicNameValuePair("post_type", postType));
-    post_params.add(new BasicNameValuePair("post_hash", postHash));
-    post_params.add(new BasicNameValuePair("post_message", message));
-    post_params.add(new BasicNameValuePair("update_type", updateType));
-    post_params.add(new BasicNameValuePair("update_hashes", updateHash));
-    post_params.add(new BasicNameValuePair("latest_log_hash", latestLogHash));
-    post_params.add(new BasicNameValuePair("latest_modify_hash", latestModifyHash));
+    ContentValues post_params = new ContentValues();
+    post_params.put("access_token", accessToken);
+    post_params.put("access_token_secret", accessTokenSecret);
+    post_params.put("post_type", postType);
+    post_params.put("post_hash", postHash);
+    post_params.put("post_message", message);
+    post_params.put("update_type", updateType);
+    post_params.put("update_hashes", updateHash);
+    post_params.put("latest_log_hash", latestLogHash);
+    post_params.put("latest_modify_hash", latestModifyHash);
     return HttpPostRequest(post_params, TWIMPT_API_URL + "logs/post");
   }
 
@@ -128,13 +139,13 @@ public class TwimptNetwork {
   public static JSONObject UpdateRequest(final String updateType, final String updateHash,
                                          final String latestLogHash, final String latestModifyHash)
           throws JSONException, IOException {
-    List<NameValuePair> post_params = new ArrayList<NameValuePair>();
-    post_params.add(new BasicNameValuePair("update_type", updateType));
-    post_params.add(new BasicNameValuePair("update_hashes", updateHash));
+    ContentValues post_params = new ContentValues();
+    post_params.put("update_type", updateType);
+    post_params.put("update_hashes", updateHash);
     if (latestLogHash != null)
-      post_params.add(new BasicNameValuePair("latest_log_hash", latestLogHash));
+      post_params.put("latest_log_hash", latestLogHash);
     if (latestModifyHash != null)
-      post_params.add(new BasicNameValuePair("latest_modify_hash", latestModifyHash));
+      post_params.put("latest_modify_hash", latestModifyHash);
     return HttpPostRequest(post_params, TWIMPT_API_URL + "logs/update");
   }
 
@@ -150,37 +161,28 @@ public class TwimptNetwork {
    */
   public static JSONObject LogRequest(final String updateType, final String updateHash,
                                       final String oldestLogHash) throws JSONException, IOException {
-    ArrayList<NameValuePair> post_params = new ArrayList<NameValuePair>();
-    post_params.add(new BasicNameValuePair("update_type", updateType));
-    post_params.add(new BasicNameValuePair("update_hashes", updateHash));
-    post_params.add(new BasicNameValuePair("oldest_log_hash", oldestLogHash));
+    ContentValues post_params = new ContentValues();
+    post_params.put("update_type", updateType);
+    post_params.put("update_hashes", updateHash);
+    post_params.put("oldest_log_hash", oldestLogHash);
     return HttpPostRequest(post_params, TWIMPT_API_URL + "logs/log");
   }
 
   public static JSONObject ImageUploadRequest(byte[] imageBuf) throws IOException, JSONException {
-    ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
+    ContentValues params = new ContentValues();
     String encodedImageData = Base64.encodeToString(imageBuf, Base64.NO_WRAP);
-    params.add(new BasicNameValuePair("file_content", encodedImageData));
+    params.put("file_content", encodedImageData);
     return HttpPostRequest(params, TWIMPT_API_URL + "files/upload");
   }
   /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                                       部屋情報関連
    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-  public static JSONObject GetRecentRoom(final String url, final int pageNum) throws IOException, JSONException {
-    DefaultHttpClient client = new DefaultHttpClient();
-    HttpGet request = new HttpGet(TWIMPT_API_URL + "rooms/recent/" + url + "/" + pageNum);
-    final HttpResponse response = client.execute(request);
-    Logger.log("StatusCode=" + response.getStatusLine().getStatusCode());
-    HttpEntity entity = response.getEntity();
-    if (entity == null)
-      return null;
-    String str = EntityUtils.toString(entity);
+  public static JSONObject GetRecentRoom(final String urlStr, final int pageNum) throws IOException, JSONException {
+    URL url = new URL(TWIMPT_API_URL + "rooms/recent/" + urlStr + "/" + pageNum);
+    HttpURLConnection con = (HttpURLConnection) url.openConnection();
     Logger.log(TWIMPT_API_URL + "rooms/recent/" + url + "/" + pageNum);
-    JSONObject out_json;
-    out_json = new JSONObject(str);
-    Logger.log(out_json.toString(2));
-    return out_json;
+    return Request(con);
   }
 
   public static JSONObject GetRecentCreatedRoom(final int pageNum) throws JSONException, IOException {
@@ -201,9 +203,9 @@ public class TwimptNetwork {
 
   public static JSONObject GetRequestToken(String apiKey, String apiKeySecret)
           throws IOException, JSONException {
-    ArrayList<NameValuePair> post_params = new ArrayList<NameValuePair>();
-    post_params.add(new BasicNameValuePair("api_key", apiKey));
-    post_params.add(new BasicNameValuePair("api_key_secret", apiKeySecret));
+    ContentValues post_params = new ContentValues();
+    post_params.put("api_key", apiKey);
+    post_params.put("api_key_secret", apiKeySecret);
     return HttpPostRequest(post_params, TWIMPT_API_URL + "request_token");
   }
 
@@ -219,11 +221,11 @@ public class TwimptNetwork {
   }
 
   public static JSONObject GetAccessToken(String apiKey, String apiKeySecret, String requestToken, String requestTokenSecret) throws IOException, JSONException {
-    ArrayList<NameValuePair> post_params = new ArrayList<NameValuePair>();
-    post_params.add(new BasicNameValuePair("api_key", apiKey));
-    post_params.add(new BasicNameValuePair("api_key_secret", apiKeySecret));
-    post_params.add(new BasicNameValuePair("request_token", requestToken));
-    post_params.add(new BasicNameValuePair("request_token_secret", requestTokenSecret));
+    ContentValues post_params = new ContentValues();
+    post_params.put("api_key", apiKey);
+    post_params.put("api_key_secret", apiKeySecret);
+    post_params.put("request_token", requestToken);
+    post_params.put("request_token_secret", requestTokenSecret);
     return HttpPostRequest(post_params, TWIMPT_API_URL + "access_token");
   }
 
@@ -242,7 +244,7 @@ public class TwimptNetwork {
    */
   public static JSONObject UpdateRequest(String type, String id) throws IOException, JSONException {
     String url = TWIMPT_API_URL + type + '/' + id;
-    return Request(new HttpGet(url));
+    return Request((HttpURLConnection) new URL(url).openConnection());
   }
 
   /**
@@ -255,7 +257,7 @@ public class TwimptNetwork {
    */
   public static JSONObject UpdateRequest(String path) throws IOException, JSONException {
     String url = TWIMPT_API_URL + path;
-    return Request(new HttpGet(url));
+    return Request((HttpURLConnection) new URL(url).openConnection());
   }
 
   /**
