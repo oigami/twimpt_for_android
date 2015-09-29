@@ -123,8 +123,8 @@ public class PostActivity extends ActionBarActivity {
     menu.setHeaderTitle(null);
     menu.add(0, CONTEXT_MENU.OMIKUJI.ordinal(), 0, R.string.insert_lottery_command);
     // menu.add(0, CONTEXT_MENU.DEFAULT.ordinal(), 0, "テキストの選択");
-    menu.add(0, CONTEXT_MENU.IMAGE_UPLOAD.ordinal(), 0, R.string.image_upload);
-    menu.add(0, CONTEXT_MENU.IMAGE_PASTE.ordinal(), 0, R.string.image_paste);
+    //menu.add(0, CONTEXT_MENU.IMAGE_UPLOAD.ordinal(), 0, R.string.image_upload);
+    //menu.add(0, CONTEXT_MENU.IMAGE_PASTE.ordinal(), 0, R.string.image_paste);
     menu.add(0, CONTEXT_MENU.CANCEL.ordinal(), 0, R.string.cancel);
     super.onCreateContextMenu(menu, v, menuInfo);
   }
