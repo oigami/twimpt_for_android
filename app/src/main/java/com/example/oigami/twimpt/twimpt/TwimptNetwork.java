@@ -15,8 +15,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -48,15 +50,19 @@ public class TwimptNetwork {
     return out_json;
   }
 
-  private static String CreatePostParameter(ContentValues postParam) {
+  private static String CreatePostParameter(ContentValues postParam) throws UnsupportedEncodingException {
     Set<Map.Entry<String, Object>> s = postParam.valueSet();
     Iterator itr = s.iterator();
     Map.Entry me = (Map.Entry) itr.next();
     StringBuilder postStr = new StringBuilder();
-    postStr.append(me.getKey()).append('=').append(me.getValue());
+    postStr.append(me.getKey()).append('=');
+    if (me.getValue() != null)
+      postStr.append(URLEncoder.encode(me.getValue().toString(), "utf-8"));
     while (itr.hasNext()) {
       me = (Map.Entry) itr.next();
-      postStr.append('&').append(me.getKey()).append('=').append(me.getValue());
+      postStr.append('&').append(me.getKey()).append('=');
+      if (me.getValue() != null)
+        postStr.append(URLEncoder.encode(me.getValue().toString(), "utf-8"));
     }
     Logger.log(postStr.toString());
     return postStr.toString();
