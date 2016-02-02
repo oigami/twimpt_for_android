@@ -27,6 +27,7 @@ public class TwimptTextParser {
     /**
      * 投稿された画像urlを保持
      * nullの場合は画像なし
+     * date/hash.ext の形式
      */
     String[] postedImageUrl;
   }
@@ -50,8 +51,15 @@ public class TwimptTextParser {
     return RegexFormat(str, "<" + str + ">$1</" + str + ">");
   }
 
-  private static String createImagePath(String $1, String $2, String $3) {
-    return $1 + "/" + $3 + "." + $2;
+  /**
+   * Twimptの画像のパスを作成する
+   * @param date 日付
+   * @param ext  拡張子
+   * @param hash ハッシュ
+   * @return date/hash.ext
+   */
+  private static String createImagePath(String date, String ext, String hash) {
+    return date + "/" + hash + "." + ext;
   }
 
   private static final String[][] imageRegex = {
