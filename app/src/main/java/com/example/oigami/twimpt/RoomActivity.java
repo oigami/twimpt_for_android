@@ -196,8 +196,8 @@ public class RoomActivity extends ActionBarActivity {
         //        dlg.show(getSupportFragmentManager(), "selected");
       }
     });
-    mIconListener = new TwimptIconListener(RoomActivity.this, mImageCacheDB.getTwimptIconTable(), exec);
-    mImageListener = new TwimptImageListener(RoomActivity.this, mImageCacheDB.getTwimptImageTable(), exec);
+    mIconListener = new TwimptIconListener(RoomActivity.this, mImageCacheDB.IconTableInstance(), exec, mGlobals.ImageCacheDrawable);
+    mImageListener = new TwimptImageListener(RoomActivity.this, mImageCacheDB.ImageTableInstance(), exec, mGlobals.ImageCacheDrawable);
 
     Intent intent = getIntent();
     mNowHash = intent.getStringExtra(INTENT_ROOM_NAME_HASH);
@@ -318,7 +318,7 @@ public class RoomActivity extends ActionBarActivity {
   }
 
   interface RequestListener {
-    public Runnable OnRequest(String path) throws IOException, JSONException;
+    Runnable OnRequest(String path) throws IOException, JSONException;
   }
 
   private Runnable UpdateRunnable(final TwimptRoom nowRoom, final ParsedData parsedData,
@@ -508,10 +508,9 @@ public class RoomActivity extends ActionBarActivity {
   public static void PushLogData(Map<String, TwimptRoom> twimptRooms, TwimptRoom twimptRoom,
                                  ParsedData parsedData) {
     final TwimptLogData[] twimptLogData = parsedData.mTwimptLogData;
-    final int size = twimptLogData.length;
     final ArrayList<TwimptLogData> dataList = twimptRoom.dataList;
-    for (int i = 0; i < size; i++) {
-      dataList.add(twimptLogData[i]);
+    for (TwimptLogData data : twimptLogData) {
+      dataList.add(data);
     }
     twimptRooms.putAll(parsedData.mTwimptRooms);
   }
@@ -782,8 +781,9 @@ public class RoomActivity extends ActionBarActivity {
         TwimptLogData data = (TwimptLogData) bundle.getSerializable(BUNDLE_TWIMPT_LOG_DATA);
         text.setText(data.decodedText);
         name.setText(data.name);
+        String timeString = TimeDiff.toDiffDate(data.time) + "前";
+        time.setText(timeString);
         roomName.setText(data.roomData.name);
-
         builder = new AlertDialog.Builder(getActivity());
         builder.setTitle(null);
         builder.setView(v);
@@ -807,93 +807,101 @@ public class RoomActivity extends ActionBarActivity {
     }
   }
 
-  private Map<String, Drawable> ImageCacheDrawable = new HashMap<String, Drawable>();
 
-  class TwimptIconListener implements TwimptListAdapter.DrawableListener {
-    private TwimptIconTable mIconTable;
-    private Context mContext;
-    private ExecutorService mExec;
+}
 
-    public TwimptIconListener(Context context, TwimptIconTable iconTable, ExecutorService exec) {
-      mIconTable = iconTable;
-      mContext = context;
-      mExec = exec;
-    }
+class TwimptIconListener implements TwimptListAdapter.DrawableListener {
+  private TwimptIconTable mIconTable;
+  private Context mContext;
+  private ExecutorService mExec;
+  private HashMap<String, Drawable> mImageCacheDrawable;
 
-    @Override
-    public Drawable getDrawable(String url) {
-      Drawable drawable;
-      drawable = ImageCacheDrawable.get(url); //キャッシュから画像を取得
-      if (drawable != null)
-        return drawable;
-      //データベースから画像を取得
-      drawable = mIconTable.getDrawable(url);
-      if (drawable != null)
-        ImageCacheDrawable.put(url, drawable);
-      return drawable;
-    }
-
-    @Override
-    public FileDownloadThread downloadDrawable(final String hash) {
-
-      if (ImageCacheDrawable.containsKey(hash)) return null;
-      ImageCacheDrawable.put(hash, null);
-
-      return new FileDownloadThread(mExec, "http://twimpt.com/icon/" + hash, new FileDownloader.OnDownloadBeginListener() {
-        @Override
-        public OutputStream DownloadBegin(URLConnection urlConnection) {
-          try {
-            final long length = urlConnection.getContentLength();
-            return mIconTable.openFileOutput(hash, length, mContext);
-          } catch (FileNotFoundException e) {
-            e.printStackTrace();
-          }
-          return null;
-        }
-      });
-    }
+  public TwimptIconListener(Context context, TwimptIconTable iconTable, ExecutorService exec, HashMap<String, Drawable> imageCacheDrawable) {
+    mIconTable = iconTable;
+    mContext = context;
+    mExec = exec;
+    mImageCacheDrawable = imageCacheDrawable;
+    if (imageCacheDrawable == null)
+      mImageCacheDrawable = new HashMap<>();
   }
 
-  class TwimptImageListener implements TwimptImageAdapter.DrawableListener {
-    private TwimptImageTable mImageTable;
-    private Context mContext;
-    private ExecutorService mExec;
-
-    public TwimptImageListener(Context context, TwimptImageTable imageTable, ExecutorService exec) {
-      mImageTable = imageTable;
-      mContext = context;
-      mExec = exec;
-    }
-
-    @Override
-    public Drawable getDrawable(String hash) {
-      Drawable drawable;
-      drawable = ImageCacheDrawable.get(hash); //キャッシュから画像を取得
-      if (drawable != null)
-        return drawable;
-      //データベースから画像を取得
-      drawable = mImageTable.getDrawable(hash, mContext);
-      if (drawable != null)
-        ImageCacheDrawable.put(hash, drawable);
+  @Override
+  public Drawable getDrawable(String url) {
+    Drawable drawable;
+    drawable = mImageCacheDrawable.get(url); //キャッシュから画像を取得
+    if (drawable != null)
       return drawable;
-    }
+    //データベースから画像を取得
+    drawable = mIconTable.getDrawable(url);
+    if (drawable != null)
+      mImageCacheDrawable.put(url, drawable);
+    return drawable;
+  }
 
-    @Override
-    public FileDownloadThread downloadDrawable(final String hash) {
-      if (ImageCacheDrawable.containsKey(hash)) return null;
-      ImageCacheDrawable.put(hash, null);
-      return new FileDownloadThread(mExec, "http://twimpt.com/upload/original/" + hash, new FileDownloader.OnDownloadBeginListener() {
-        @Override
-        public OutputStream DownloadBegin(URLConnection urlConnection) {
-          try {
-            final long length = urlConnection.getContentLength();
-            return mImageTable.openFileOutput(hash, length, mContext);
-          } catch (FileNotFoundException e) {
-            e.printStackTrace();
-          }
-          return null;
+  @Override
+  public FileDownloadThread downloadDrawable(final String hash) {
+
+    if (mImageCacheDrawable.containsKey(hash)) return null;
+    mImageCacheDrawable.put(hash, null);
+
+    return new FileDownloadThread(mExec, "http://twimpt.com/icon/" + hash, new FileDownloader.OnDownloadBeginListener() {
+      @Override
+      public OutputStream DownloadBegin(URLConnection urlConnection) {
+        try {
+          final long length = urlConnection.getContentLength();
+          return mIconTable.openFileOutput(hash, length, mContext);
+        } catch (FileNotFoundException e) {
+          e.printStackTrace();
         }
-      });
-    }
+        return null;
+      }
+    });
+  }
+}
+
+class TwimptImageListener implements TwimptImageAdapter.DrawableListener {
+  private TwimptImageTable mImageTable;
+  private Context mContext;
+  private ExecutorService mExec;
+  private HashMap<String, Drawable> mImageCacheDrawable;
+
+  public TwimptImageListener(Context context, TwimptImageTable imageTable, ExecutorService exec, HashMap<String, Drawable> imageCacheDrawable) {
+    mImageTable = imageTable;
+    mContext = context;
+    mExec = exec;
+    mImageCacheDrawable = imageCacheDrawable;
+    if (imageCacheDrawable == null)
+      mImageCacheDrawable = new HashMap<>();
+  }
+
+  @Override
+  public Drawable getDrawable(String hash) {
+    Drawable drawable;
+    drawable = mImageCacheDrawable.get(hash); //キャッシュから画像を取得
+    if (drawable != null)
+      return drawable;
+    //データベースから画像を取得
+    drawable = mImageTable.getDrawable(hash, mContext);
+    if (drawable != null)
+      mImageCacheDrawable.put(hash, drawable);
+    return drawable;
+  }
+
+  @Override
+  public FileDownloadThread downloadDrawable(final String hash) {
+    if (mImageCacheDrawable.containsKey(hash)) return null;
+    mImageCacheDrawable.put(hash, null);
+    return new FileDownloadThread(mExec, "http://twimpt.com/upload/original/" + hash, new FileDownloader.OnDownloadBeginListener() {
+      @Override
+      public OutputStream DownloadBegin(URLConnection urlConnection) {
+        try {
+          final long length = urlConnection.getContentLength();
+          return mImageTable.openFileOutput(hash, length, mContext);
+        } catch (FileNotFoundException e) {
+          e.printStackTrace();
+        }
+        return null;
+      }
+    });
   }
 }
