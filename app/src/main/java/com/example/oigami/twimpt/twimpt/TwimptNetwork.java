@@ -174,12 +174,36 @@ public class TwimptNetwork {
     return HttpPostRequest(post_params, TWIMPT_API_URL + "logs/log");
   }
 
-  public static JSONObject ImageUploadRequest(byte[] imageBuf) throws IOException, JSONException {
-    ContentValues params = new ContentValues();
-    String encodedImageData = Base64.encodeToString(imageBuf, Base64.NO_WRAP);
-    params.put("file_content", encodedImageData);
-    return HttpPostRequest(params, TWIMPT_API_URL + "files/upload");
+  public static JSONObject ImageUploadRequest(final String accessToken, final String accessTokenSecret,
+                                              final InputStream imageStream) throws IOException, JSONException {
+    String urlStr = TWIMPT_API_URL + "files/upload";
+    Logger.log(urlStr);
+    URL url = new URL(urlStr);
+    HttpURLConnection con = (HttpURLConnection) url.openConnection();
+    con.setRequestMethod("POST");
+    // 送信パラメータのエンコードを指定
+    con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+    con.setDoOutput(true);
+    con.setDoInput(true);
+    OutputStream os = con.getOutputStream();
+    ContentValues post_params = new ContentValues();
+    post_params.put("access_token", accessToken);
+    post_params.put("access_token_secret", accessTokenSecret);
+    os.write(CreatePostParameter(post_params).getBytes());
+    os.write("&file_content=data:image/png;base64,".getBytes());
+    byte[] bytes = new byte[1024 * 10];
+    do {
+      int ret = imageStream.read(bytes);
+      if (ret == -1) break;
+      os.write(URLEncoder.encode(Base64.encodeToString(bytes, 0, ret, Base64.NO_WRAP), "ascii").getBytes());
+      //outputStream.flush();
+    } while (true);
+    //outputStream.flush();
+    //outputStream.close();
+    return Request(con);
   }
+
+
   /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                                       部屋情報関連
    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */

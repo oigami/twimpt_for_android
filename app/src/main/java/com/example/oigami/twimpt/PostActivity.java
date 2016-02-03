@@ -199,21 +199,21 @@ public class PostActivity extends ActionBarActivity {
     builder.setContentText("ContentText");
     final Notification notification = builder.build();
     manager.notify(0, notification);
-    if (true) return;
-    new Thread(new Runnable() {
-      @Override
-      public void run() {
-        try {
-          JSONObject json = TwimptNetwork.ImageUploadRequest(imageBuf);
-          Logger.log(json.toString(2));
-        } catch (IOException e) {
-          e.printStackTrace();
-        } catch (JSONException e) {
-          e.printStackTrace();
-        }
 
-      }
-    }).start();
+//    new Thread(new Runnable() {
+//      @Override
+//      public void run() {
+//        try {
+//          JSONObject json = TwimptNetwork.ImageUploadRequest(imageBuf);
+//          Logger.log(json.toString(2));
+//        } catch (IOException e) {
+//          e.printStackTrace();
+//        } catch (JSONException e) {
+//          e.printStackTrace();
+//        }
+//
+//      }
+//    }).start();
   }
 
   void PostRequest() {
