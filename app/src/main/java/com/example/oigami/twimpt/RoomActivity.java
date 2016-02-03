@@ -145,7 +145,7 @@ public class RoomActivity extends ActionBarActivity {
     }
     Editor e = sharedPref.edit();
     e.putInt("code", nowVersion);
-    e.commit();
+    e.apply();
   }
 
   @Override

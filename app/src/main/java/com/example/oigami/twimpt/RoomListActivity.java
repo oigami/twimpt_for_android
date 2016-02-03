@@ -138,7 +138,7 @@ public class RoomListActivity extends ActionBarActivity {
       } else {
         SharedPreferences.Editor e = sharedPref.edit();
         e.clear();
-        e.commit();
+        e.apply();
         Toast.makeText(this, "認証を解除しました", Toast.LENGTH_LONG).show();
       }
       break;
