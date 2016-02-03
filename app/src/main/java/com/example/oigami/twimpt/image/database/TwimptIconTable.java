@@ -41,9 +41,9 @@ public class TwimptIconTable {
     public static final String IS_DOWNLOADED = "isDownloaded";
   }
 
-  private ImageCacheDB mImageCacheDB;
+  private ImageDB mImageCacheDB;
 
-  protected TwimptIconTable(ImageCacheDB database) {
+  protected TwimptIconTable(ImageDB database) {
     mImageCacheDB = database;
   }
 

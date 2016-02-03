@@ -15,34 +15,33 @@ import java.util.Date;
 /**
  * Created by oigami on 2014/10/02
  */
-public class ImageCacheDB extends SQLiteOpenHelper {
+public class ImageDB extends SQLiteOpenHelper {
   private File mDirectoryPath;
   private static final String dbFileName = "ImageCache.db";
   //public static final String TBL_CACHE = "ImageCache";
   private static final int DB_VERSION = 3;
   private Context mContext;
-
+  private TwimptImageTable mTwimptImageTable;
+  private TwimptIconTable mTwimptIconTable;
   private SQLiteDatabase mDB;
+  private static ImageDB instance;
 
-  public ImageCacheDB(Context context) {
+  protected ImageDB(Context context) {
     super(context, dbFileName, null, DB_VERSION);
     mDirectoryPath = new File(context.getFilesDir(), dbFileName);
     mDirectoryPath.mkdir();
     mContext = context;
+    mTwimptIconTable = new TwimptIconTable(this);
+    mTwimptImageTable = new TwimptImageTable(this);
   }
 
-  public ImageCacheDB(Context context, File directoryPath) {
-    super(context, dbFileName, null, DB_VERSION);
-    mDirectoryPath = directoryPath;
-    mDirectoryPath.mkdir();
-  }
 
-  //  public static ImageCacheDB getInstance(Context context) {
-  //    if (instance == null) {
-  //      instance = new ImageCacheDB(context);
-  //    }
-  //    return instance;
-  //  }
+  public static ImageDB getInstance(Context context) {
+    if (instance == null) {
+      instance = new ImageDB(context);
+    }
+    return instance;
+  }
 
   synchronized private SQLiteDatabase getDB() {
     if (mDB == null) {
@@ -64,12 +63,12 @@ public class ImageCacheDB extends SQLiteOpenHelper {
     TwimptIconTable.onCreate(db);
   }
 
-  public TwimptIconTable getTwimptIconTable() {
-    return new TwimptIconTable(this);
+  public TwimptIconTable IconTableInstance() {
+    return mTwimptIconTable;
   }
 
-  public TwimptImageTable getTwimptImageTable() {
-    return new TwimptImageTable(this);
+  public TwimptImageTable ImageTableInstance() {
+    return mTwimptImageTable;
   }
 
   public String getDBName() {
@@ -90,8 +89,8 @@ public class ImageCacheDB extends SQLiteOpenHelper {
       db.execSQL("DROP TABLE " + TBL_CACHE + ";");
       onCreate(db);
     }
-    TwimptIconTable.onUpgrade(db,oldVersion,newVersion);
-    TwimptImageTable.onUpgrade(db,oldVersion, newVersion);
+    TwimptIconTable.onUpgrade(db, oldVersion, newVersion);
+    TwimptImageTable.onUpgrade(db, oldVersion, newVersion);
   }
 
   protected long insert(String tableName, ContentValues values) {

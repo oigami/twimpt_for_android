@@ -36,9 +36,9 @@ import android.widget.Toast;
 import com.example.oigami.twimpt.debug.Logger;
 import com.example.oigami.twimpt.file.FileDownloadThread;
 import com.example.oigami.twimpt.file.FileDownloader;
-import com.example.oigami.twimpt.image.database.ImageCacheDB;
-import com.example.oigami.twimpt.image.database.TwimptImageTable;
+import com.example.oigami.twimpt.image.database.ImageDB;
 import com.example.oigami.twimpt.image.database.TwimptIconTable;
+import com.example.oigami.twimpt.image.database.TwimptImageTable;
 import com.example.oigami.twimpt.twimpt.ParsedData;
 import com.example.oigami.twimpt.twimpt.ParsedRoomData;
 import com.example.oigami.twimpt.twimpt.ParsedUserData;
@@ -85,7 +85,7 @@ public class RoomActivity extends ActionBarActivity {
 
   private TwimptListAdapter adapter;
   private Button listEndButton;
-  private ImageCacheDB mImageCacheDB;
+  private ImageDB mImageCacheDB;
   /** コア数 */
   private static final int NUMBER_OF_CORES = Runtime.getRuntime().availableProcessors();
   private ExecutorService exec;
@@ -155,7 +155,7 @@ public class RoomActivity extends ActionBarActivity {
     exec = Executors.newFixedThreadPool(NUMBER_OF_CORES >= 1 ? NUMBER_OF_CORES : 1);
     //deleteDatabase();
     VersionCheck();
-    mImageCacheDB = new ImageCacheDB(RoomActivity.this);
+    mImageCacheDB = ImageDB.getInstance(RoomActivity.this);
     //    deleteDatabase(uploadImageDB.getDbFileName());
     //    uploadImageDB = new ImageCacheDB(RoomActivity.this, "PostedImage.db");
 
@@ -229,7 +229,7 @@ public class RoomActivity extends ActionBarActivity {
         TwimptImageAdapter imageAdapter = (TwimptImageAdapter) parent.getAdapter();
         //drawableをbitmapに変換する
         String url = imageAdapter.getItemUrl(position);
-        String filename = mImageCacheDB.getTwimptImageTable().getFileName(url);
+        String filename = mImageCacheDB.ImageTableInstance().getFileName(url);
         Intent intent = new Intent(RoomActivity.this, ImageViewActivity.class);
         intent.putExtra(ImageViewActivity.INTENT_DRAWABLE_FILENAME, filename);
         startActivity(intent);
