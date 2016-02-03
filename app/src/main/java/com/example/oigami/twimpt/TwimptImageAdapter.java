@@ -18,7 +18,6 @@ import android.widget.TextView;
 
 import com.example.oigami.twimpt.file.FileDownloadThread;
 import com.example.oigami.twimpt.file.FileDownloader;
-import com.example.oigami.twimpt.twimpt.TwimptLogData;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,11 +27,11 @@ import java.util.HashMap;
  * アダプターは、画像ダウンロード中の文字列表示と画像の表示を行う
  */
 public class TwimptImageAdapter extends BaseAdapter {
-  HashMap<String, String> mDownloadingTextImageMap = new HashMap<String, String>();
+  HashMap<String, String> mDownloadingTextImageMap = new HashMap<>();
   /** ダウンロード中のurl */
-  private ArrayList<String> isDownloading = new ArrayList<String>();
+  private ArrayList<String> isDownloading = new ArrayList<>();
   private Drawable[] mDrawableMap;
-  TwimptLogData mTwimptLogData;
+  String[] mPostedImageUrl;
   private Context mContext;
   DrawableListener mListener;
   Handler mHandler = new Handler(Looper.getMainLooper()) {
@@ -48,14 +47,14 @@ public class TwimptImageAdapter extends BaseAdapter {
      * @param url 取得するurl
      * @return drawable or null（無い時）
      */
-    public Drawable getDrawable(String url);
+    Drawable getDrawable(String url);
 
     /**
      * 画像をダウンロード
      * @param url ダウンロードするurl
      * @return FileDownloadNonThread or null(urlが不正な時など)
      */
-    public FileDownloadThread downloadDrawable(String url);
+    FileDownloadThread downloadDrawable(String url);
   }
 
   class ViewHolder {
@@ -63,26 +62,26 @@ public class TwimptImageAdapter extends BaseAdapter {
     ImageView mImage;
   }
 
-  TwimptImageAdapter(Context context, TwimptLogData twimptLogData, DrawableListener listener) {
+  TwimptImageAdapter(Context context, String[] posdedImageUrl, DrawableListener listener) {
     mContext = context;
-    mTwimptLogData = twimptLogData;
     mListener = listener;
-    if (mTwimptLogData.postedImageUrl == null) return;
-    for (String url : mTwimptLogData.postedImageUrl) {
+    mPostedImageUrl = posdedImageUrl;
+    if (mPostedImageUrl == null) return;
+    for (String url : mPostedImageUrl) {
       mDownloadingTextImageMap.put(url, "ダウンロード待ち");
     }
-    mDrawableMap = new Drawable[mTwimptLogData.postedImageUrl.length];
+    mDrawableMap = new Drawable[mPostedImageUrl.length];
   }
 
   @Override
   public final int getCount() {
-    if (mTwimptLogData.postedImageUrl == null) return 0;
-    return mTwimptLogData.postedImageUrl.length;
+    if (mPostedImageUrl == null) return 0;
+    return mPostedImageUrl.length;
   }
 
   public final String getItemUrl(int position) {
     if (getCount() < position) return null;
-    return mTwimptLogData.postedImageUrl[position];
+    return mPostedImageUrl[position];
 
   }
 
@@ -90,13 +89,13 @@ public class TwimptImageAdapter extends BaseAdapter {
   public final Drawable getItem(int position) {
     Drawable drawable = null;
     //通常の場所から画像を取得
-    //    drawable = mTwimptLogData.postedImageUrl.get(position).second;
+    //    drawable = mTwimptLogData.mPostedImageUrl.get(position).second;
     //    if (drawable != null)
     //      return drawable;
     drawable = mDrawableMap[position];
     if (drawable != null)
       return drawable;
-    String url = mTwimptLogData.postedImageUrl[position];
+    String url = mPostedImageUrl[position];
     //上位から画像取得
     drawable = mListener.getDrawable(url);
     if (drawable != null)
@@ -138,7 +137,7 @@ public class TwimptImageAdapter extends BaseAdapter {
       holder.mText.setText(null);
       return v;
     }
-    final String url = mTwimptLogData.postedImageUrl[position];
+    final String url = mPostedImageUrl[position];
     holder.mText.setText(mDownloadingTextImageMap.get(url));
 
     //        以下画像ダウンロード処理
@@ -161,7 +160,7 @@ public class TwimptImageAdapter extends BaseAdapter {
       @Override
       public void OnDownloaded(String url, boolean isSuccess) {
         Drawable drawable = mListener.getDrawable(url);
-        mDrawableMap[position]=drawable;
+        mDrawableMap[position] = drawable;
         mHandler.sendEmptyMessage(0);
       }
     });

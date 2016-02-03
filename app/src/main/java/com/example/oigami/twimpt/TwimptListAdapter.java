@@ -202,7 +202,7 @@ public class TwimptListAdapter extends BaseAdapter {
         holder.mGridView.setVisibility(View.VISIBLE);
         TwimptImageAdapter imageAdapter = mImageAdapters.get(twimptLogData.hash);
         if (imageAdapter == null) {
-          imageAdapter = new TwimptImageAdapter(mContext, twimptLogData, mImageListener);
+          imageAdapter = new TwimptImageAdapter(mContext, twimptLogData.postedImageUrl, mImageListener);
           mImageAdapters.put(twimptLogData.hash, imageAdapter);
         }
         holder.mGridView.setAdapter(imageAdapter);
