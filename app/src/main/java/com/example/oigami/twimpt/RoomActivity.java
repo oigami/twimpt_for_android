@@ -44,6 +44,7 @@ import com.example.oigami.twimpt.twimpt.ParsedRoomData;
 import com.example.oigami.twimpt.twimpt.ParsedUserData;
 import com.example.oigami.twimpt.twimpt.TwimptLogData;
 import com.example.oigami.twimpt.twimpt.TwimptNetwork;
+import com.example.oigami.twimpt.twimpt.TwimptUtil;
 import com.example.oigami.twimpt.twimpt.room.TwimptRoom;
 import com.example.oigami.twimpt.twimpt.token.AccessTokenData;
 import com.example.oigami.twimpt.util.Network;
@@ -844,7 +845,7 @@ class TwimptIconListener implements TwimptListAdapter.DrawableListener {
     if (mImageCacheDrawable.containsKey(hash)) return null;
     mImageCacheDrawable.put(hash, null);
 
-    return new FileDownloadThread(mExec, "http://twimpt.com/icon/" + hash, new FileDownloader.OnDownloadBeginListener() {
+    return new FileDownloadThread(mExec, TwimptUtil.TWIMPT_ICON_URL + hash, new FileDownloader.OnDownloadBeginListener() {
       @Override
       public OutputStream DownloadBegin(URLConnection urlConnection) {
         try {
@@ -891,7 +892,7 @@ class TwimptImageListener implements TwimptImageAdapter.DrawableListener {
   public FileDownloadThread downloadDrawable(final String hash) {
     if (mImageCacheDrawable.containsKey(hash)) return null;
     mImageCacheDrawable.put(hash, null);
-    return new FileDownloadThread(mExec, "http://twimpt.com/upload/original/" + hash, new FileDownloader.OnDownloadBeginListener() {
+    return new FileDownloadThread(mExec, TwimptUtil.TWIMPT_IMAGE_URL + hash, new FileDownloader.OnDownloadBeginListener() {
       @Override
       public OutputStream DownloadBegin(URLConnection urlConnection) {
         try {

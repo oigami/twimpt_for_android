@@ -20,7 +20,7 @@ import java.util.regex.Pattern;
  * Created by oigami on 2015/02/17
  */
 public class TwimptTextParser {
-  private static final String TWIMPT_IMAGE_URL = "http://twimpt.com/upload/original/";
+  private static final String TWIMPT_IMAGE_URL = TwimptUtil.TWIMPT_IMAGE_URL;
 
   static class ParsedTextData {
     Spannable textSpan;

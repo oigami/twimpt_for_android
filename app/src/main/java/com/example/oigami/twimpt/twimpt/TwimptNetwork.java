@@ -28,8 +28,8 @@ import java.util.Set;
  */
 public class TwimptNetwork {
 
-  private static final String TWIMPT_API_URL = "http://api.twimpt.com/";
-  private static final String TWIMPT_TWIST_URL = "http://twist.twimpt.com/";
+  private static final String TWIMPT_API_URL = TwimptUtil.TWIMPT_API_URL;
+  private static final String TWIMPT_TWIST_URL = TwimptUtil.TWIMPT_TWIST_URL;
 
   private static String ConvertInputStreamToString(InputStream is) throws IOException {
     InputStreamReader reader = new InputStreamReader(is);
