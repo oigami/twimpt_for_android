@@ -60,8 +60,16 @@ public class TwimptAuthActivity extends ActionBarActivity {
     text.append(string);
   }
 
+  private void AppendLog(int stringId) {
+    AppendLog(getString(stringId));
+  }
+
   private void AppendLogln(String string) {
     text.append(string + "\n");
+  }
+
+  private void AppendLogln(int stringId) {
+    AppendLogln(getString(stringId));
   }
 
   @Override
@@ -85,7 +93,8 @@ public class TwimptAuthActivity extends ActionBarActivity {
       mHandler.post(new Runnable() {
         @Override
         public void run() {
-          AppendLog("\t...停止中");
+          AppendLog("\t...");
+          AppendLog(R.string.is_stopped);
           dlg = AlertDialogFragment.CreateWarningDialog();
           dlg.show(getSupportFragmentManager(), "tag");
         }
@@ -118,13 +127,14 @@ public class TwimptAuthActivity extends ActionBarActivity {
 
     private Dialog WarningDialog(final TwimptAuthActivity This) {
       final AlertDialog.Builder dlgBuilder = new AlertDialog.Builder(This)
-              .setTitle("ブラウザによる認証の途中")
-              .setMessage("認証を続けますか？\n「はい」を押すとブラウザが起動します");
+              .setTitle(R.string.being_in_middle_of_browser_auth)
+              .setMessage(R.string.want_to_continue_authentication);
       dlgBuilder.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
         @Override
         public void onClick(DialogInterface dialog, int which) {
           This.dlg = null;
-          This.AppendLogln("\t...再開");
+          This.AppendLog("\t...");
+          This.AppendLogln(R.string.resumption);
           This.GoAuthWebPage();
         }
       });
@@ -132,7 +142,8 @@ public class TwimptAuthActivity extends ActionBarActivity {
         @Override
         public void onClick(DialogInterface dialog, int which) {
           This.dlg = null;
-          This.AppendLogln("\t...中止");
+          This.AppendLog("\t...");
+          This.AppendLogln(R.string.Stop);
           This.mustBootBrowser = false;
         }
       });
@@ -147,7 +158,7 @@ public class TwimptAuthActivity extends ActionBarActivity {
     if (mNowUpdate) return;
     mNowUpdate = true;
     button.setEnabled(false);
-    AppendLog("request_tokenの取得");
+    AppendLog(R.string.get_request_token);
     new Thread(new Runnable() {
       @Override
       public void run() {
@@ -158,7 +169,8 @@ public class TwimptAuthActivity extends ActionBarActivity {
           mHandler.post(new Runnable() {
             @Override
             public void run() {
-              AppendLogln("\t...成功");
+              AppendLog("\t...");
+              AppendLogln(R.string.success);
               button.setEnabled(true);
               TwimptToken.SetRequestToken(TwimptAuthActivity.this, requestTokenData);
               GoAuthWebPage();
@@ -170,7 +182,7 @@ public class TwimptAuthActivity extends ActionBarActivity {
             @Override
             public void run() {
               button.setEnabled(true);
-              AppendLogln("\t...失敗:\n" + e.getMessage() + "\n\n" + Logger.getStackTraceString(e));
+              AppendLogln("\t..." + getString(R.string.Failure) + ":\n" + e.getMessage() + "\n\n" + Logger.getStackTraceString(e));
             }
           });
         }
@@ -183,7 +195,7 @@ public class TwimptAuthActivity extends ActionBarActivity {
     if (mNowUpdate) return;
     mNowUpdate = true;
     button.setEnabled(false);
-    AppendLog("access_tokenの取得");
+    AppendLog(R.string.get_access_token);
     new Thread(new Runnable() {
       @Override
       public void run() {
@@ -196,7 +208,8 @@ public class TwimptAuthActivity extends ActionBarActivity {
             public void run() {
               TwimptToken.SetAccessToken(TwimptAuthActivity.this, accessTokenData);
               button.setEnabled(true);
-              AppendLogln("\t...成功");
+              AppendLog("\t...");
+              AppendLogln(R.string.success);
               StartRoomActivity();
             }
           });
@@ -206,7 +219,7 @@ public class TwimptAuthActivity extends ActionBarActivity {
             @Override
             public void run() {
               button.setEnabled(true);
-              AppendLogln("\t...失敗:\n" + e.getMessage() + "\n\n" + Arrays.toString(e.getStackTrace()));
+              AppendLogln("\t..." + getString(R.string.Failure) + ":\n" + e.getMessage() + "\n\n" + Arrays.toString(e.getStackTrace()));
             }
           });
         }
@@ -216,7 +229,7 @@ public class TwimptAuthActivity extends ActionBarActivity {
 
   private void GoAuthWebPage() {
     assert requestTokenData != null;
-    AppendLog("認証ページに移動");
+    AppendLog(R.string.move_in_auth_page);
     mustBootBrowser = true;
     Uri uri = Uri.parse(TwimptNetwork.GetAuthURL(TwimptDeveloperData.AUTH_ID, requestTokenData.token, requestTokenData.secret));
     Intent i = new Intent(Intent.ACTION_VIEW, uri);

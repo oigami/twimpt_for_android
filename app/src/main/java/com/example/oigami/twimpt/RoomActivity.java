@@ -447,7 +447,7 @@ public class RoomActivity extends ActionBarActivity {
 
     case COMMENT:
       //StartPostActivity(twimptLogData.roomHash, mNowHash, twimptLogData.name);
-      Toast.makeText(this, "未実装", Toast.LENGTH_LONG).show();
+      Toast.makeText(this, R.string.error, Toast.LENGTH_LONG).show();
       return true;
     case OPEN_ROOM: {
       //mNowHash = twimptLogData.roomHash;
@@ -480,7 +480,7 @@ public class RoomActivity extends ActionBarActivity {
       StartPostActivity(twimptLogData.roomData.hash, mNowHash);
       return true;
     default:
-      Toast.makeText(this, "エラー", Toast.LENGTH_LONG).show();
+      Toast.makeText(this, R.string.error, Toast.LENGTH_LONG).show();
       return super.onContextItemSelected(item);
     }
   }
@@ -782,7 +782,7 @@ public class RoomActivity extends ActionBarActivity {
         TwimptLogData data = (TwimptLogData) bundle.getSerializable(BUNDLE_TWIMPT_LOG_DATA);
         text.setText(data.decodedText);
         name.setText(data.name);
-        String timeString = TimeDiff.toDiffDate(data.time) + "前";
+        String timeString = TimeDiff.toDiffDate(data.time) + activity.getString(R.string.ago);
         time.setText(timeString);
         roomName.setText(data.roomData.name);
         builder = new AlertDialog.Builder(getActivity());

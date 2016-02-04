@@ -45,6 +45,29 @@
     <string name="update_network_error">ネットワークにつながっているか確認して下さい</string>
     <string name="confirmation_post_to_public">"ひとりごとに投稿しますが、\nよろしいですか？"</string>
     <string name="censored">禁則事項です</string>
+    <string name="omikuji">おみくじ</string>
+    <string name="meshi">めし</string>
+    <string name="seiyu">声優</string>
+    <string name="precure">プリキュア</string>
+    <string name="pokemon">ポケモン</string>
+    <string name="lovelive">ラブライブ</string>
+    <string name="monhan">モンハン</string>
+    <string name="imas">アイマス</string>
+    <string name="aikatsu">アイカツ</string>
+    <string name="image_upload_error">画像のアップロードに失敗しました</string>
+    <string name="error">エラー</string>
+    <string name="lottery_command_insert">くじ引きコマンドの挿入</string>
+    <string name="ago">前</string>
+    <string name="success">成功</string>
+    <string name="Failure">失敗</string>
+    <string name="Stop">中止</string>
+    <string name="resumption">再開</string>
+    <string name="get_request_token">request_tokenの取得</string>
+    <string name="get_access_token">access_tokenの取得</string>
+    <string name="move_in_auth_page">認証ページに移動</string>
+    <string name="being_in_middle_of_browser_auth">ブラウザによる認証の途中</string>
+    <string name="want_to_continue_authentication">認証を続けますか？\n「はい」を押すとブラウザが起動します</string>
+    <string name="is_stopped">停止中</string>
     <!--<string name="now_auth_confirmation">認証確認中</string>-->
 
 </resources>

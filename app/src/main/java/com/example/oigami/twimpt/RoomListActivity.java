@@ -79,7 +79,7 @@ public class RoomListActivity extends ActionBarActivity {
           startActivity(intent);
           return;
         default:
-          Toast.makeText(RoomListActivity.this, "未実装", Toast.LENGTH_LONG).show();
+          Toast.makeText(RoomListActivity.this, R.string.error, Toast.LENGTH_LONG).show();
         }
       }
     });
@@ -126,7 +126,7 @@ public class RoomListActivity extends ActionBarActivity {
         Intent intent = new Intent(RoomListActivity.this, TwimptAuthActivity.class);
         startActivity(intent);
       } else {
-        Toast.makeText(this, "すでに認証しています", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, R.string.authenticated, Toast.LENGTH_LONG).show();
       }
       break;
     case R.id.action_deauthentication: {
@@ -134,12 +134,12 @@ public class RoomListActivity extends ActionBarActivity {
       accessToken = sharedPref.getString("access_token", "");
       accessTokenSecret = sharedPref.getString("access_token_secret", "");
       if (accessToken.equals("") || accessTokenSecret.equals("")) {
-        Toast.makeText(this, "認証されていません", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, R.string.not_authenticated, Toast.LENGTH_LONG).show();
       } else {
         SharedPreferences.Editor e = sharedPref.edit();
         e.clear();
         e.apply();
-        Toast.makeText(this, "認証を解除しました", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, R.string.authenticated_release, Toast.LENGTH_LONG).show();
       }
       break;
     }

@@ -10,58 +10,58 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:text="おみくじ"/>
+        android:text="@string/omikuji"/>
 
     <CheckBox
         android:id="@+id/meshi"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:text="めし"/>
+        android:text="@string/meshi"/>
 
     <CheckBox
         android:id="@+id/seiyu"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:text="声優"/>
+        android:text="@string/seiyu"/>
 
     <CheckBox
         android:id="@+id/precure"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:text="プリキュア"/>
+        android:text="@string/precure"/>
 
     <CheckBox
         android:id="@+id/pokemon"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:text="ポケモン"/>
+        android:text="@string/pokemon"/>
 
     <CheckBox
         android:id="@+id/lovelive"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:text="ラブライブ"/>
+        android:text="@string/lovelive"/>
     <CheckBox
         android:id="@+id/monhan"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:text="モンハン"/>
+        android:text="@string/monhan"/>
     <CheckBox
         android:id="@+id/imas"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:text="アイマス"/>
+        android:text="@string/imas"/>
     <CheckBox
         android:id="@+id/aikatsu"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:text="アイカツ"/>
+        android:text="@string/aikatsu"/>
 </LinearLayout>
