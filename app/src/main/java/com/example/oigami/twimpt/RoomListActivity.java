@@ -49,7 +49,7 @@ public class RoomListActivity extends ActionBarActivity {
 //            res.getString(R.string.recent_opened_name),
             res.getString(R.string.recent_posted_name)
     };
-    ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, members);
+    ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, members);
     final ListView listView = (ListView) findViewById(R.id.room_list);
     // アダプターを設定します
     listView.setAdapter(adapter);

@@ -53,7 +53,7 @@ public class TwimptLogData implements Serializable {
      * @return twimptのルームデータ
      * @throws JSONException
      */
-    public TwimptRoom TwimptRoomParse(JSONObject room_data) throws JSONException;
+    TwimptRoom TwimptRoomParse(JSONObject room_data) throws JSONException;
   }
 
   public void TextParse(TwimptTextParser parser) {

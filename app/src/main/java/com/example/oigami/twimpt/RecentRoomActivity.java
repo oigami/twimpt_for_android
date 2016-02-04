@@ -38,7 +38,7 @@ public class RecentRoomActivity extends ActionBarActivity {
   private String mRecentUrl;
   private boolean mNowUpdate = false;
   private SwipeRefreshLayout mSwipeRefreshWidget;
-  private ArrayList<String> mArrayListHash = new ArrayList<String>();
+  private ArrayList<String> mArrayListHash = new ArrayList<>();
   private RecentRoomsListAdapter mAdapter = new RecentRoomsListAdapter();
   Handler mHandler = new Handler() {
     @Override
@@ -135,9 +135,7 @@ public class RecentRoomActivity extends ActionBarActivity {
           if (mNowPage == 1)
             mArrayListHash.clear();
           TwimptJson.RecentRoomListParse(globals.twimptRooms, json, mArrayListHash);
-        } catch (IOException e) {
-          e.printStackTrace();
-        } catch (JSONException e) {
+        } catch (IOException | JSONException e) {
           e.printStackTrace();
         }
         mHandler.sendEmptyMessage(0);

@@ -1,6 +1,5 @@
 package com.example.oigami.twimpt.twimpt;
 
-import com.example.oigami.twimpt.twimpt.TwimptLogData;
 import com.example.oigami.twimpt.twimpt.room.TwimptRoom;
 
 import org.json.JSONArray;
@@ -18,11 +17,11 @@ public class ParsedData {
 
   //public TwimptRoom[] mTwimptRooms;
   public ParsedData() {
-    mTwimptRooms = new HashMap<String, TwimptRoom>();
+    mTwimptRooms = new HashMap<>();
   }
 
   public ParsedData(JSONObject json, final ConcurrentHashMap<String, TwimptRoom> twimptRooms) throws JSONException {
-    mTwimptRooms = new HashMap<String, TwimptRoom>();
+    mTwimptRooms = new HashMap<>();
     Parse(json, twimptRooms);
   }
 

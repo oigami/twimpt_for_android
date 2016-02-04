@@ -48,14 +48,14 @@ public class TwimptListAdapter extends BaseAdapter {
      * @param hash 取得するhash
      * @return drawable or null（無い時）
      */
-    public Drawable getDrawable(String hash);
+    Drawable getDrawable(String hash);
 
     /**
      * 画像をダウンロード
      * @param hash ダウンロードするhash
      * @return FileDownloadNonThread or null(urlが不正な時など)
      */
-    public FileDownloadThread downloadDrawable(String hash);
+    FileDownloadThread downloadDrawable(String hash);
   }
 
   DrawableListener mIconListener;
@@ -83,8 +83,8 @@ public class TwimptListAdapter extends BaseAdapter {
                            TwimptRoom nowRoom,
                            DrawableListener iconListener,
                            TwimptImageAdapter.DrawableListener imageListener) {
-    mImageAdapters = new HashMap<String, TwimptImageAdapter>();
-    mUrlDrawableMap = new HashMap<String, Drawable>();
+    mImageAdapters = new HashMap<>();
+    mUrlDrawableMap = new HashMap<>();
     mLogParser = new TwimptTextParser();
     mHandler = new Handler(Looper.getMainLooper()) {
       @Override

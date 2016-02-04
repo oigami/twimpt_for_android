@@ -13,9 +13,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * Created by oigami on 2014/10/02
  */
 public class DataApplication extends Application {
-  ConcurrentHashMap<String, TwimptRoom> twimptRooms = new ConcurrentHashMap<String, TwimptRoom>();
+  ConcurrentHashMap<String, TwimptRoom> twimptRooms = new ConcurrentHashMap<>();
   //String now_room_hash;
-  public HashMap<String, Drawable> ImageCacheDrawable = new HashMap<String, Drawable>();
+  public HashMap<String, Drawable> ImageCacheDrawable = new HashMap<>();
 
 }
 

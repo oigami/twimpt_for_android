@@ -186,7 +186,7 @@ public class TwimptTextParser {
 
   public String ImageParse(ParsedTextData parsedText, String text) {
     int cnt = 0;
-    ArrayList<String> url = new ArrayList<String>();
+    ArrayList<String> url = new ArrayList<>();
     for (Pattern pattern : mImagePatterns) {
       Matcher m = pattern.matcher(text);
       if (m.find()) {
