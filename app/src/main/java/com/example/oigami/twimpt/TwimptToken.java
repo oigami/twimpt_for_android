@@ -29,7 +29,7 @@ public class TwimptToken {
     SharedPreferences.Editor e = sharedPref.edit();
     e.putString("request_token", reqToken.token);
     e.putString("request_token_secret", reqToken.secret);
-    e.commit();
+    e.apply();
   }
 
   public static void ClearRequestToken(Context context) {
@@ -37,7 +37,7 @@ public class TwimptToken {
     SharedPreferences.Editor e = sharedPref.edit();
     e.remove("request_token");
     e.remove("request_token_secret");
-    e.commit();
+    e.apply();
   }
 
   /**
@@ -59,7 +59,7 @@ public class TwimptToken {
     SharedPreferences.Editor e = sharedPref.edit();
     e.putString("access_token", accessToken.token);
     e.putString("access_token_secret", accessToken.secret);
-    e.commit();
+    e.apply();
   }
 
   public static void ClearAccessToken(Context context) {
@@ -67,7 +67,7 @@ public class TwimptToken {
     SharedPreferences.Editor e = sharedPref.edit();
     e.remove("access_token");
     e.remove("access_token_secret");
-    e.commit();
+    e.apply();
   }
 }
 
