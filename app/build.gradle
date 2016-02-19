@@ -3,8 +3,8 @@ apply plugin: 'com.android.application'
 android {
     apply from: 'release.gradle', to: android
 
-    compileSdkVersion 22
-    buildToolsVersion '23.0.1'
+    compileSdkVersion 21
+    buildToolsVersion '23.0.2'
     defaultConfig {
         applicationId "com.example.oigami.twimpt"
         minSdkVersion 10
